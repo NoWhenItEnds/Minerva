@@ -50,7 +50,7 @@ public sealed partial class ModInstaller(DeadlockInstall install)
             if (installed.GameBuild != expected.GameBuild) reasons.Add($"game build changed ({installed.GameBuild} -> {expected.GameBuild})");
             if (installed.HostLayout != expected.HostLayout || installed.HostLayoutCrc != expected.HostLayoutCrc)
                 reasons.Add($"game's {expected.HostLayout} changed");
-            if (installed.ScriptSha256 != expected.ScriptSha256) reasons.Add("mod script changed");
+            if (installed.ScriptSha256 != expected.ScriptSha256) reasons.Add("mod script, or data it derives from game files, changed");
         }
 
         var state = installed == null ? ModState.NotInstalled : reasons.Count == 0 ? ModState.UpToDate : ModState.Stale;
@@ -142,6 +142,8 @@ public sealed partial class ModInstaller(DeadlockInstall install)
                 }
             }
         }
+
+        warnings.AddRange(ModBuilder.GenerateScript(install).Warnings);
 
         if (!LaunchOptionsHaveCondebug())
             warnings.Add("Deadlock launch options do not include -condebug, so console.log is not written and the companion receives nothing.");

@@ -31,7 +31,7 @@ public class ModScriptTests
         game.Run(ModBuilder.Script);
         game.Frames(5);
         companion.Read(game.TakeLines());
-        Assert.Equal(["hello", "full"], companion.Messages.Select(m => m.Type));
+        Assert.Equal(["hello", "full"], companion.Messages.Select(m => m.Type).Where(t => t != "api"));
         Assert.True(companion.Tree.Complete);
         Assert.Equal(8, companion.Tree.Panels.Count);
         Assert.Equal("1,234", companion.Tree.Panels["/Hud/TopBar/Souls"].Text);
@@ -59,6 +59,63 @@ public class ModScriptTests
         Assert.Equal(2, delta.Body.GetProperty("set").GetArrayLength());
         Assert.Equal(["/Hud/TopBar/Scoreboard"], delta.Body.GetProperty("del").EnumerateArray().Select(k => k.GetString()));
         Assert.Equal(0, companion.Protocol.Rejected);
+    }
+
+    [Fact]
+    public void Panels_from_probed_layouts_report_their_classes()
+    {
+        var root = new FakePanel("Hud", "Panel") { layoutfile = "s2r://panorama/layout/base_hud.vxml" };
+        var minimap = root.Add(new FakePanel("Minimap", "HudMinimap") { layoutfile = @"panorama\layout\hud_minimap" }); // as the game reports it
+        var hero = minimap.Add(new FakePanel("", "Panel") { Classes = { "map_button", "player", "enemy" } });
+        var camp = minimap.Add(new FakePanel("", "Panel") { Classes = { "map_button", "neutral" } });
+        var image = hero.Add(new FakePanel("MainImage", "Image") { Classes = { "player" } }); // no gate class: not probed
+        var elsewhere = root.Add(new FakePanel("Shop", "Panel") { Classes = { "map_button" } }); // other layout: not probed
+
+        var script = ModBuilder.WithProbes(ModBuilder.Script, [new ClassProbe("hud_minimap", "map_button", ["active", "enemy", "neutral", "player"])]);
+        var game = new FakeGame(root);
+        var companion = new Companion();
+        game.Run(script);
+        game.Frames(5);
+        companion.Read(game.TakeLines());
+
+        var panels = companion.Tree.Panels;
+        Assert.Equal("base_hud", panels[""].Layout);
+        Assert.Equal("hud_minimap", panels["/Minimap"].Layout);
+        Assert.Equal("hud_minimap", panels["/Minimap/Panel#0/MainImage"].Layout); // inherited
+        Assert.Equal(["map_button", "enemy", "player"], panels["/Minimap/Panel#0"].ClassList);
+        Assert.Equal(["map_button", "neutral"], panels["/Minimap/Panel#1"].ClassList);
+        Assert.Null(panels["/Minimap/Panel#0/MainImage"].Classes);
+        Assert.Null(panels["/Shop"].Classes);
+        Assert.Equal(0, elsewhere.ClassChecks);
+        Assert.Equal(1, image.ClassChecks); // only the gate
+
+        camp.Classes.Add("active"); // the camp respawned
+        game.Advance(1100);
+        companion.Read(game.TakeLines());
+        Assert.True(companion.Tree.Panels["/Minimap/Panel#1"].HasClass("active"));
+        Assert.Equal("hud_minimap", companion.Tree.Panels["/Minimap/Panel#1"].Layout); // delta rows inherit too
+        Assert.Equal(0, companion.Protocol.Rejected);
+    }
+
+    [Fact]
+    public void Api_of_globals_and_each_panel_type_is_sent_once()
+    {
+        var root = new FakePanel("Root", "Panel");
+        root.Add(new FakePanel("A", "Label"));
+        root.Add(new FakePanel("B", "Label"));
+        var game = new FakeGame(root);
+        var companion = new Companion();
+        game.Run(ModBuilder.Script);
+        game.Frames(5);
+        game.Advance(1100);
+        companion.Read(game.TakeLines());
+
+        var api = companion.Messages.Where(m => m.Type == "api").ToList();
+        var global = Assert.Single(api, m => m.Body.GetProperty("scope").GetString() == "global");
+        Assert.True(global.Body.GetProperty("members").TryGetProperty("$", out _));
+        Assert.False(global.Body.GetProperty("members").TryGetProperty("MINERVA_PROBES", out _)); // our own globals left out
+        var types = api.Where(m => m.Body.GetProperty("scope").GetString() == "panel").Select(m => m.Body.GetProperty("type").GetString()).ToList();
+        Assert.Equal(["Label", "Panel"], types.Order());
     }
 
     [Fact]
@@ -301,6 +358,9 @@ public class ModScriptTests
         public double actualyoffset { get; set; } = 20;
         public double actuallayoutwidth { get; set; } = 100;
         public double actuallayoutheight { get; set; } = 30;
+        public string? layoutfile { get; set; }
+        public HashSet<string> Classes { get; } = new(StringComparer.Ordinal);
+        public int ClassChecks { get; private set; }
         public FakePanel? Parent { get; private set; }
         public List<FakePanel> Children { get; } = [];
         internal Action? Visited { get; set; }
@@ -317,6 +377,12 @@ public class ModScriptTests
         public int GetChildCount() => Children.Count;
         public FakePanel? GetChild(int i) => i < Children.Count ? Children[i] : null;
         public FakePanel? GetParent() => Parent;
+
+        public bool BHasClass(string name)
+        {
+            ClassChecks++;
+            return Classes.Contains(name);
+        }
 
         public bool IsValid()
         {

@@ -15,12 +15,12 @@ public sealed record HudMessage(string Type, int Seq, long SentUnixMs, DateTime 
 
 /// <summary>
 /// Reassembles chunked messages written by the mod as console lines:
-/// <c>MNRV3|&lt;seq&gt;|&lt;index&gt;|&lt;count&gt;|&lt;json chunk&gt;</c> on the <c>PanoramaScript</c> channel.
+/// <c>MNRV4|&lt;seq&gt;|&lt;index&gt;|&lt;count&gt;|&lt;json chunk&gt;</c> on the <c>PanoramaScript</c> channel.
 /// </summary>
 public sealed class HudProtocol
 {
-    public const int Version = 3;
-    public const string Prefix = "MNRV3|";
+    public const int Version = 4;
+    public const string Prefix = "MNRV4|";
 
     private readonly Dictionary<int, (string?[] Parts, int Received)> _partial = new();
 

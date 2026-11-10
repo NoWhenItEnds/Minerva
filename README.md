@@ -26,6 +26,7 @@ Deadlock patches constantly, so nothing patch-specific is hand-maintained:
 | `Minerva.Source2` | Source 2 formats: binary KV3 writer, resource container, Panorama compiling. No Valve tools needed. | Unaffected unless Valve changes file formats |
 | `Minerva.Mod` | Builds the addon **from the installed game's own files**: reads the current `base_hud.vxml_c`, adds one `<scripts>` include, re-encodes it, and packs it with the script into `addons/pak90_dir.vpk`. A manifest records the game build and host-layout CRC. | `probe mod status` reports the addon as stale; `probe mod install` regenerates it |
 | `Minerva.Mod/Panorama/minerva.js` | In-game script. **Generic**: walks the whole HUD panel tree and logs changes, with no Deadlock panel IDs hardcoded. | Unaffected; HUD changes only change what the companion sees |
+| `Minerva.Mod/ClassProbes.cs` | Panorama can't list a panel's classes, only test one (`BHasClass`). For layouts whose panels carry meaning in classes (the minimap: hero/camp/boss, enemy, dead, camp up), the builder reads the layout's stylesheets from the game files and writes the class list into the script. | The class list is regenerated; only a renamed layout needs a code change (reported as a warning) |
 | `Minerva.Hud` | Follows `console.log`, reassembles the mod's messages, mirrors the HUD tree. | Unaffected |
 | `Minerva.GameState` | Static game data (heroes, items) read from the VPK, plus demo parsing for offline analysis. | Data is re-read from game files automatically |
 | `Minerva.Probe` | Development CLI. | — |
@@ -83,6 +84,22 @@ Tests that need the game skip themselves if Deadlock isn't installed (or set `DE
   - the minimap location name (`central park`), and about 50 positioned minimap icon panels (not identified yet);
   - the player's own health and regen, resists, move speed, ammo and ability cooldowns;
   - souls pickup events.
+
+- Minimap icons are snippets from `hud_minimap` (`MinimapPlayerSnippet`, `MinimapBossSnippet`, ...); what an icon is
+  and its state are only style classes (`.map_button.neutral.neutral_large.active` = a large camp that is up,
+  `.map_button.player.enemy.PlayerDead`, ...). Protocol 4 reads each panel's layout file and, for minimap icons, the
+  probed classes; `hud watch` writes them to `out/minimap.json`. It also dumps the member names of Panorama's globals
+  and of each panel type to `out/hud_api.json`, to see what this build exposes beyond the documented Dota API.
+
+- Third bot match (protocol 4, 2026-11-10): updates every 1.2–1.5 s with no long gap after complete walks; worst frame
+  2–3 ms on 55 of 57 walks (one 44 ms console write). The game reports `layoutfile` as `panorama\layout\hud_minimap`
+  (backslashes, no extension), which the first version of the probe didn't match; fixed.
+- Panorama API in this build (`out/hud_api.json`): no game-state globals (no Dota-style `Game`/`Players`/`Entities`),
+  only `$`/`panorama` plus sound functions, so the HUD is the only source. Panels can test classes (`BHasClass`) but
+  not list them, and images can be set but not read. Readable extras: `heroid` (hero badges/logos), `min`/`max` on
+  progress bars. `$.AsyncWebRequest` exists (a possible localhost transport instead of console.log).
+- Minimap: 69 icons (45 placed): 12 heroes (`MinimapPlayerSnippet`), ~31 bosses with health bars, the mid-boss with a
+  `NextSpawnTimer` label, and the rest (camps, markers) to be identified by class.
 
 ## Open questions
 

@@ -62,13 +62,26 @@ public static class PanoramaCompiler
     }
 
     /// <summary>Decompile a compiled layout back to XML (via ValveResourceFormat) for inspection and tests.</summary>
-    public static string DecompileLayout(byte[] compiledLayout)
+    public static string DecompileLayout(byte[] compiledLayout) => Decompile(compiledLayout);
+
+    /// <summary>Decompile a compiled Panorama resource (layout, stylesheet, script) to its source text.</summary>
+    public static string Decompile(byte[] compiled)
     {
         using var resource = new Resource();
-        resource.Read(new MemoryStream(compiledLayout));
-        using var writer = new IndentedTextWriter();
-        resource.DataBlock!.WriteText(writer);
-        return writer.ToString();
+        resource.Read(new MemoryStream(compiled));
+        switch (resource.DataBlock)
+        {
+            case ValveResourceFormat.ResourceTypes.Panorama p when p is not PanoramaLayout and not PanoramaStyle:
+                return Encoding.UTF8.GetString(p.Data);
+            case { } block:
+                using (var writer = new IndentedTextWriter())
+                {
+                    block.WriteText(writer);
+                    return writer.ToString();
+                }
+            default:
+                throw new InvalidDataException("Resource has no data block.");
+        }
     }
 
     private static Kv3Object Dependency(string addon, string path, uint crc, bool exists) => new()

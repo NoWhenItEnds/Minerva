@@ -42,6 +42,10 @@ public static class ModBuilder
 
     public static string CompiledScriptReference => PanoramaCompiler.CompiledName(ScriptSourcePath); // .../minerva.vjs
 
+    /// <summary>Placeholder in the script template that <see cref="WithProbes"/> replaces with generated data.</summary>
+    public const string ProbesPlaceholder = "/*@probes*/{}";
+
+    /// <summary>The script template (no generated data: probes empty).</summary>
     public static string Script
     {
         get
@@ -52,11 +56,42 @@ public static class ModBuilder
         }
     }
 
+    /// <summary>Fill the template's probe table.</summary>
+    public static string WithProbes(string script, IEnumerable<ClassProbe> probes)
+    {
+        if (!script.Contains(ProbesPlaceholder, StringComparison.Ordinal))
+            throw new InvalidOperationException($"Mod script has no {ProbesPlaceholder} placeholder.");
+        var table = probes.ToDictionary(p => p.Layout, p => new { gate = p.Gate, classes = p.Classes });
+        return script.Replace(ProbesPlaceholder, JsonSerializer.Serialize(table), StringComparison.Ordinal);
+    }
+
+    /// <summary>The script as installed: the template plus data derived from the installed game's files.</summary>
+    public static (string Script, IReadOnlyList<ClassProbe> Probes, IReadOnlyList<string> Warnings) GenerateScript(DeadlockInstall install)
+    {
+        using var package = OpenGame(install);
+        var (_, host) = ReadHostLayout(package, install);
+        var warnings = new List<string>();
+        var shared = LayoutTree.Includes(PanoramaCompiler.ReadLayoutTree(host));
+        var probes = ClassProbes.Derive(package, shared, warnings);
+        return (WithProbes(Script, probes), probes, warnings);
+    }
+
     /// <summary>The game's current compiled host layout (path and bytes).</summary>
     public static (string Path, byte[] Bytes) ReadHostLayout(DeadlockInstall install)
     {
-        using var package = new Package();
+        using var package = OpenGame(install);
+        return ReadHostLayout(package, install);
+    }
+
+    private static Package OpenGame(DeadlockInstall install)
+    {
+        var package = new Package();
         package.Read(install.MainVpk);
+        return package;
+    }
+
+    private static (string Path, byte[] Bytes) ReadHostLayout(Package package, DeadlockInstall install)
+    {
         foreach (var path in HostLayouts)
         {
             if (package.FindEntry(path) is not { } entry) continue;
@@ -67,7 +102,9 @@ public static class ModBuilder
             $"None of the host layouts ({string.Join(", ", HostLayouts)}) exist in {install.MainVpk}. The HUD layout was renamed; update ModBuilder.HostLayouts.");
     }
 
-    public static ModManifest ExpectedManifest(DeadlockInstall install)
+    public static ModManifest ExpectedManifest(DeadlockInstall install) => ExpectedManifest(install, GenerateScript(install).Script);
+
+    private static ModManifest ExpectedManifest(DeadlockInstall install, string script)
     {
         var (path, bytes) = ReadHostLayout(install);
         return new ModManifest
@@ -76,7 +113,8 @@ public static class ModBuilder
             GameBuild = ReadGameBuild(install),
             HostLayout = path,
             HostLayoutCrc = Crc32.Compute(bytes),
-            ScriptSha256 = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(Script))),
+            // Covers the template and the data derived from game files (e.g. stylesheet classes).
+            ScriptSha256 = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(script))),
             BuiltUtc = DateTime.UtcNow,
         };
     }
@@ -90,10 +128,10 @@ public static class ModBuilder
         LayoutTree.AddScriptInclude(tree, CompiledScriptReference);
         var hostOverride = PanoramaCompiler.ReplaceLayoutTree(hostBytes, tree);
 
-        var script = Script;
+        var script = GenerateScript(install).Script;
         var compiledScript = PanoramaCompiler.CompileScript(AddonName, ScriptSourcePath, script);
 
-        var manifest = ExpectedManifest(install);
+        var manifest = ExpectedManifest(install, script);
 
         using var package = new Package();
         package.AddFile(hostPath, hostOverride);

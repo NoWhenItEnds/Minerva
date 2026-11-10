@@ -243,6 +243,9 @@ async Task<int> HudCommand()
     var replayed = 0;
     var warnedForeign = false;
     DateTime? lastWalkUtc = null;
+    var outDir = Path.GetDirectoryName(Path.GetFullPath(dump))!;
+    var api = new SortedDictionary<string, JsonElement>(StringComparer.Ordinal); // "global" / "panel:<type>" -> members
+    var apiDirty = false;
 
     static double Num(JsonElement body, string name) => body.TryGetProperty(name, out var v) && v.ValueKind == JsonValueKind.Number ? v.GetDouble() : 0;
 
@@ -283,6 +286,13 @@ async Task<int> HudCommand()
             case "error":
                 Console.WriteLine($"[error] {msg.Body}");
                 break;
+            case "api":
+                var scope = msg.Body.TryGetProperty("scope", out var sc) ? sc.GetString() : "?";
+                var apiKey = scope == "panel" && msg.Body.TryGetProperty("type", out var ty) ? "panel:" + ty.GetString() : scope ?? "?";
+                if (msg.Body.TryGetProperty("members", out var mem)) api[apiKey] = mem.Clone();
+                apiDirty = true;
+                if (scope == "global") Console.WriteLine($"[api  ] {mem.EnumerateObject().Count()} globals (written to {Path.Combine(outDir, "hud_api.json")})");
+                break;
             default:
                 latencies.Add(latency);
                 if (latencies.Count > 300) latencies.RemoveAt(0);
@@ -295,16 +305,33 @@ async Task<int> HudCommand()
                     $"walked {Num(msg.Body, "n"),5}  tree {tree.Panels.Count,5}  changed {changed.Count,5}  " +
                     $"walk {Num(msg.Body, "busyMs"),3} ms over {Num(msg.Body, "walkMs"),4} ms, worst frame {Num(msg.Body, "frameMaxMs"),2} ms  " +
                     $"every {interval,4:0.0} s  latency {latency,4:0} ms (p50 {sorted[sorted.Count / 2]:0}, p95 {sorted[(int)(sorted.Count * 0.95)]:0})");
-                foreach (var p in changed.Where(p => p.Text != null && (grep == null || grep.IsMatch(p.Key) || grep.IsMatch(p.Text))).Take(msg.Type == "full" ? 0 : 12))
-                    Console.WriteLine($"          {p.Key} = \"{p.Text}\"{(p.Visible ? "" : " (hidden)")}");
+                static string Describe(Minerva.Hud.HudPanel p) =>
+                    (p.Text != null ? $" = \"{p.Text}\"" : "") +
+                    (p.Classes != null ? $" [{string.Join(' ', p.Classes)}] at {p.X},{p.Y}" : "") +
+                    (p.Visible ? "" : " (hidden)");
+                foreach (var p in changed.Where(p => (p.Text != null || p.Classes != null) &&
+                                                     (grep == null || grep.IsMatch(p.Key) || grep.IsMatch(Describe(p)))).Take(msg.Type == "full" ? 0 : 12))
+                    Console.WriteLine($"          {p.Key}{Describe(p)}");
                 break;
         }
 
         if (tree.Complete && (msg.Type == "full" || DateTime.UtcNow - lastDump > TimeSpan.FromSeconds(10)))
         {
             lastDump = DateTime.UtcNow;
+            var json = new JsonSerializerOptions { WriteIndented = false };
             var panels = tree.Panels.Values.OrderBy(p => p.Key, StringComparer.Ordinal).ToList();
-            await File.WriteAllTextAsync(dump, JsonSerializer.Serialize(panels, new JsonSerializerOptions { WriteIndented = false }), cts.Token);
+            await File.WriteAllTextAsync(dump, JsonSerializer.Serialize(panels, json), cts.Token);
+            // Panels the mod probed for classes (minimap icons), on their own for quick inspection.
+            var probed = panels.Where(p => p.Classes != null)
+                .Select(p => new { p.Key, Classes = string.Join(' ', p.ClassList), p.Visible, p.X, p.Y, p.Width, p.Height, p.Layout });
+            await File.WriteAllTextAsync(Path.Combine(outDir, "minimap.json"),
+                JsonSerializer.Serialize(probed, new JsonSerializerOptions { WriteIndented = true }), cts.Token);
+        }
+        if (apiDirty && (msg.Type is "full" or "delta" || api.Count % 25 == 0))
+        {
+            apiDirty = false;
+            await File.WriteAllTextAsync(Path.Combine(outDir, "hud_api.json"),
+                JsonSerializer.Serialize(api, new JsonSerializerOptions { WriteIndented = true }), cts.Token);
         }
     }
     return 0;
@@ -323,6 +350,9 @@ int ModCommand()
             Console.WriteLine($"state:     {s.State}{(s.Reasons.Count > 0 ? " (" + string.Join("; ", s.Reasons) + ")" : "")}");
             Console.WriteLine($"installed: {s.InstalledPath ?? "-"}{(s.Installed != null ? $" (built {s.Installed.BuiltUtc:u} for build {s.Installed.GameBuild})" : "")}");
             Console.WriteLine($"game:      build {s.Expected.GameBuild}, host {s.Expected.HostLayout} crc {s.Expected.HostLayoutCrc:x8}");
+            foreach (var probe in Minerva.Mod.ModBuilder.GenerateScript(install).Probes)
+                Console.WriteLine($"probes:    {probe.Layout}: panels with .{probe.Gate} tested for {probe.Classes.Count} classes " +
+                                  $"({string.Join(' ', probe.Classes.Take(12))}{(probe.Classes.Count > 12 ? " ..." : "")})");
             foreach (var w in s.Warnings) Console.WriteLine($"warning:   {w}");
             return s.State == Minerva.Mod.ModState.UpToDate ? 0 : 2;
         }
