@@ -15,3 +15,15 @@ export_credentials.cfg
 .mono/
 data_*/
 mono_crash.*.json
+
+# .NET
+bin/
+obj/
+*.user
+.vs/
+*.csproj.bak
+
+# Local captures from the probe
+*.dem
+*.jsonl
+out/
