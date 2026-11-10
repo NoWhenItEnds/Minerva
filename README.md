@@ -28,13 +28,13 @@ Deadlock patches constantly, so nothing patch-specific is hand-maintained:
 | `Minerva.Mod/Panorama/minerva.js` | In-game script. **Generic**: walks the whole HUD panel tree and logs changes, with no Deadlock panel IDs hardcoded. | Unaffected; HUD changes only change what the companion sees |
 | `Minerva.Mod/ClassProbes.cs` | Panorama can't list a panel's classes, only test one (`BHasClass`). For layouts whose panels carry meaning in classes (the minimap: hero/camp/boss, enemy, dead, camp up), the builder reads the layout's stylesheets from the game files and writes the class list into the script. | The class list is regenerated; only a renamed layout needs a code change (reported as a warning) |
 | `Minerva.Hud` | Follows `console.log`, reassembles the mod's messages, mirrors the HUD tree. | Unaffected |
-| `Minerva.GameState` | Static game data read from the game's packages: heroes and items (`GameData`), and the map's camps (position, type, first spawn, respawn, tether) and team objectives (`MapData`, from the map's entity lump plus `scripts/misc.vdata`). Also demo parsing for offline analysis. | Data is re-read from game files automatically |
-| `Minerva.Match` | Interpretation: HUD tree + static data → match state. `Bindings/` matches every live panel to its node in its layout file (`LayoutCatalog` reads the game's layouts) by id, then type and position, so a label is known by its dialog variable (`{i:kills}` in `citadel_hud_top_bar_player`) instead of a panel path. `Hud/` reads named values that way (all names in `HudVocabulary`, checked against the installed layouts at start). `MatchReader` joins top bar rows with minimap icons by player slot order. `Minimap/` reads hero and objective icons by their classes (all Deadlock class names in `MinimapVocabulary`) and calibrates minimap ↔ world per match by fitting the walker/patron/barracks icons to the same objectives in `MapData`, which also tells which minimap team is which game team. Reports what it expected but didn't find. | Class renames: one line in `MinimapVocabulary`, flagged by a warning; transform and team mapping are refitted every match |
+| `Minerva.GameState` | Static game data read from the game's packages: heroes and items (`GameData`), and the map's camps (position, type, first spawn, respawn, tether, the units each spawns and their soul rewards), lane paths and team objectives (`MapData`, from the map's entity lump plus `scripts/misc.vdata` and `scripts/npc_units.vdata`). Also demo parsing for offline analysis. | Data is re-read from game files automatically |
+| `Minerva.Match` | Interpretation: HUD tree + static data → match state. `Bindings/` matches every live panel to its node in its layout file (`LayoutCatalog` reads the game's layouts) by id, then type and position, so a label is known by its dialog variable (`{i:kills}` in `citadel_hud_top_bar_player`) instead of a panel path. `Hud/` reads named values that way (all names in `HudVocabulary`, checked against the installed layouts at start). `MatchReader` joins top bar rows with minimap icons by player slot order. `Minimap/` reads hero and objective icons by their classes (all Deadlock class names in `MinimapVocabulary`) and calibrates minimap ↔ world per match by fitting the walker/patron/barracks icons to the same objectives in `MapData`, which also tells which minimap team is which game team. `Camps/` infers camp state over time (camps have no HUD icons): spawn and respawn timers from `MapData`, clears from the local player's exact soul gains matching a nearby camp's unit rewards, and from other heroes' net worth jumps while at a camp away from lanes. Reports what it expected but didn't find. | Class renames: one line in `MinimapVocabulary`, flagged by a warning; transform and team mapping are refitted every match; camp timings and rewards are re-read from game files |
 | `Minerva.Probe` | Development CLI. | — |
 
-The interpretation layer (which panel holds souls, the clock, objectives, minimap icons) comes next, built from what
-step 1 reveals. It should also be derived from game files where possible, e.g. by decompiling the scoreboard and
-minimap layouts to find panel IDs.
+The interpretation layer follows the same rule: panels are identified through the game's own layout files and
+stylesheets, and camp, objective and lane data come from the map and vdata files, so a patch changes data rather than
+code. The few names the readers rely on are listed in one vocabulary file each and checked against the installed game.
 
 ## Trying it (step 1)
 
@@ -56,6 +56,8 @@ with `probe mod uninstall`.
 Then `probe map` prints the map's camps and objectives from the game files, `probe minimap` reads heroes and
 objectives from `out/hud_tree.json` and places them in world coordinates (with each hero's nearest camp), and
 `probe state` prints the whole match state: clock, souls, and each hero's row joined with their map position.
+`hud watch` also prints camp events as they're inferred (`[camp ] 3:31  park_club_camp (small): cleared by you`), and
+`probe camps --log <console.log>` replays a saved session's log through the camp tracker and prints every camp's state.
 
 ## Tests
 
@@ -123,26 +125,52 @@ Tests that need the game skip themselves if Deadlock isn't installed (or set `DE
 - Minimap ↔ world: the same entity lump has the walkers, patrons and barracks (`npc_boss_tier2/3`,
   `npc_barrack_boss`, with `teamnumber` and lane in `BossName`). Fitting an affine transform from those 14 landmarks
   to their minimap icons gives `x ≈ 0.0239·wx + 252`, `y ≈ −0.0242·wy + 254` (mean error 8 px, ~42 world units per
-  px; game team 2 = minimap `team1`). The minimap may be inverted per team (`invert_map`), so fit per match from the
-  landmarks rather than hardcoding.
+  px; game team 2 = minimap `team1`). The minimap is inverted for one team, but only visually:
+  `hud_minimap.vcss` flips the whole panel (`.invert_map.HudMinimap { transform: scaleY(-1) scaleX(-1) }`) and
+  counter-flips the icons, and the mod reads layout positions, which are taken before transforms. So icon
+  coordinates are the same on either team. The transform is still fitted per match from the landmarks, so a future
+  change to that would be absorbed.
 
 - HUD values by binding (from the recorded match): every hero's name (→ hero id via the game's localization), souls
   (abbreviated, `2.1k`), level, health bar fraction, max health and resists, respawn timer; the match clock, team net
   worth and kills, the local player's exact unspent souls. 17.5k of 25.7k panels match a layout node.
   - The top bar's team containers are named `TeamFriendly`/`TeamEnemy` but are fixed game teams (their layout
     attribute `team="2"`/`"3"`): the local player was under `TeamEnemy`. The score labels, by contrast, are relative to
-    the local player. Both conventions confirmed against the recorded match (deaths, net worth sums).
+    the local player. Both conventions confirmed against the recorded match (deaths, net worth sums). The game's
+    stylesheets agree that the containers don't depend on the local team: `hud.vcss` places `#TeamFriendly` left
+    and `#TeamEnemy` right unconditionally, and spectators are styled through the same ids
+    (`.TeamSpectator #TeamFriendly …`). Ally/enemy is relative only through `.friend`/`.enemy` classes.
+    `MatchReader` cross-checks each row's team against its minimap icon's team, which comes from map geometry
+    independently. If they ever disagree, it warns and doesn't link names to positions.
   - Top bar rows and minimap hero icons are in the same player-slot order: all five deaths in the match appeared on
     row `TopBarPlayerN` and icon `Panel#(N+4)` at the same moment. That links names to map positions.
   - K/D/A stayed 0/0/0 all match although heroes died: the top bar doesn't update it while hidden (probably only with
     the scoreboard open). Deaths can be counted from the respawn timer instead.
-  - Reading the whole tree takes ~190 ms; fine at one update per 1.5 s, but worth making incremental.
+  - Reading the whole tree takes ~25 ms once warm (~190 ms for the first read); fine at one update per 1.5 s.
+  - Some layouts are loaded more than once. The souls display is also inside the shop, where (closed, so hidden) the
+    mod only refreshes it on complete walks, ~15 s apart. Readers take the copy on screen (`HudBindings.Primary`).
+
+- Camps (from the game files and a recorded bot match):
+  - Spawn points (`info_neutral_trooper_spawn`) name their camp's `targetname` and the unit they spawn; units'
+    rewards are `m_flGoldReward` in `scripts/npc_units.vdata`, growing linearly by
+    `m_flGoldRewardBonusPercentPerMinute` (1.08% of the base per minute). A weak camp is three 45-soul units.
+  - Respawn timers start when the camp's last unit dies; a camp with a survivor doesn't respawn (community guides
+    agree, and their timers match `misc.vdata`: 1:25 small, 4:50 medium, 5:35 large, 5:00 Sinner's Sacrifice).
+  - The local player's unspent souls show each kill: clearing `park_club_camp` at 3:24–3:31 was three gains of
+    exactly +46 (45 + 3.4 min of growth) 200–300 units from the camp. Lane gains are different amounts (+56/+58 per
+    trooper and +26/+28 orb halves at that time) and 1000+ units from camps.
+  - Lane paths are `lane_marker_path` entities (`pathNodes`: node positions plus tangents). In the recording 95% of
+    hero positions were within 430 units of one, so other heroes' net worth rises are only read as camp clears when
+    they are 600+ units off every lane: lane troopers raise net worth just as fast.
+  - Camps have no HUD or minimap icons; community guides say the game now shows a respawn timer in the world, which
+    the HUD tree doesn't carry.
 
 ## Open questions
 
-- What does the HUD panel tree expose in a match: scoreboard numbers, items, timers, minimap icon positions?
-- Does `console.log` flush immediately? `hud watch` reports the latency.
-- Is the sliced walk invisible in play? `hud watch` reports the worst frame cost per walk.
+- Does the top bar's K/D/A update while the scoreboard is open?
+- Camp clears by others are inferred, not seen: are neutral souls shared with nearby allies (which would break exact
+  matching when clearing together)? Does net-worth inference produce false clears in longer matches?
+- Is the mod acceptable in matchmaking? Only tested in bot matches so far.
 - Offline demo parsing: DemoFile.Net 0.44.1 can't read current demos (`CitadelAbilityUpgradeInfoPacked_t`) and
   needs a one-line fork fix. Low priority now that demos aren't the live source.
 

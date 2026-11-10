@@ -36,6 +36,9 @@ public sealed class LayoutInstance(string layout, string key, IReadOnlyList<Boun
     public IEnumerable<LayoutInstance> Nested(string layout) => owner.Instances(layout).Where(i => i.Key.StartsWith(Key + "/", StringComparison.Ordinal));
 
     public bool IsShown(BoundPanel panel) => owner.IsShown(panel.Panel.Key);
+
+    /// <summary>The instance and all its ancestors are visible.</summary>
+    public bool Shown => owner.IsShown(Key);
 }
 
 /// <summary>
@@ -102,6 +105,17 @@ public sealed class HudBindings
     public IReadOnlyCollection<string> MissingLayouts => _missingLayouts;
 
     public IReadOnlyList<LayoutInstance> Instances(string layout) => _instances.GetValueOrDefault(layout) ?? [];
+
+    /// <summary>
+    /// The instance of a layout the player sees: the first shown one, else the first. Some layouts are loaded in several
+    /// places (the souls display is also inside the closed shop), and the mod refreshes hidden copies only on its
+    /// complete walks, so a hidden copy can lag by many seconds.
+    /// </summary>
+    public LayoutInstance? Primary(string layout)
+    {
+        var all = Instances(layout);
+        return all.FirstOrDefault(i => i.Shown) ?? all.FirstOrDefault();
+    }
 
     /// <summary>The panel and all its ancestors are visible.</summary>
     public bool IsShown(string key)

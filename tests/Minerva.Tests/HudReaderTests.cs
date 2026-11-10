@@ -99,6 +99,26 @@ public class HudReaderTests
         Assert.Equal("HAZE", row.HeroName);
     }
 
+    [Fact]
+    public void Values_come_from_the_copy_on_screen_when_a_layout_is_loaded_twice()
+    {
+        // The souls display is also inside the shop; while the shop is closed the mod refreshes that copy only on its
+        // complete walks, so reading it lagged the real value by up to 15 s.
+        const string souls = """<root><CitadelHudSoulAPContainer><Label id="hudCurGoldLabel" text="{i:hud_cur_gold}" /></CitadelHudSoulAPContainer></root>""";
+        var catalog = LayoutCatalog.FromXml(new Dictionary<string, string> { ["hud_gold_and_ap_container"] = souls });
+        var panels = Panels(
+            ("/Hud", "Panel", null, null),
+            ("/Hud/CitadelHudHeroShop", "Panel", null, null),
+            ("/Hud/CitadelHudHeroShop/GoldAPContainer", "CitadelHudSoulAPContainer", null, "hud_gold_and_ap_container"),
+            ("/Hud/CitadelHudHeroShop/GoldAPContainer/hudCurGoldLabel", "Label", "798", null),
+            ("/Hud/StatsAndModsContainer", "Panel", null, null),
+            ("/Hud/StatsAndModsContainer/gold_and_ap_container", "CitadelHudSoulAPContainer", null, "hud_gold_and_ap_container"),
+            ("/Hud/StatsAndModsContainer/gold_and_ap_container/hudCurGoldLabel", "Label", "844", null));
+        panels["/Hud/CitadelHudHeroShop"] = panels["/Hud/CitadelHudHeroShop"] with { Visible = false };
+
+        Assert.Equal(844, new HudReader(catalog, GameData.Empty).Read(panels).UnspentSouls);
+    }
+
     [Theory]
     [InlineData("3:53", 233)]
     [InlineData("0:-23", -23)]

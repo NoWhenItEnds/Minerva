@@ -81,7 +81,7 @@ public sealed partial class HudReader
         // reader uses matter, and CheckVocabulary covers those.
         var warnings = new List<string>(_vocabularyWarnings);
 
-        var top = hud.Instances(V.TopBar).FirstOrDefault();
+        var top = hud.Primary(V.TopBar);
         if (top == null) warnings.Add($"No '{V.TopBar}' on the HUD (not in a match?).");
 
         var heroes = new List<HeroRow>();
@@ -115,7 +115,7 @@ public sealed partial class HudReader
 
         return new HudState(
             Clock(top?.Field(V.GameClock)),
-            Integer(hud.Instances(V.SoulsContainer).FirstOrDefault()?.Field(V.UnspentSouls)),
+            Integer(hud.Primary(V.SoulsContainer)?.Field(V.UnspentSouls)),
             Integer(top?.Field(V.FriendlyKills)), Integer(top?.Field(V.EnemyKills)),
             Souls(top?.Field(V.TeamNetworth, V.FriendlyScore)), Souls(top?.Field(V.TeamNetworth, V.EnemyScore)),
             Clean(top?.Field(V.MidBossTimer)),

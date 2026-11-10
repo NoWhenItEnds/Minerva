@@ -37,6 +37,20 @@ public class MapDataTests
     }
 
     [Fact]
+    public void Camps_know_their_troopers_and_what_they_pay()
+    {
+        var camps = Map.Value.Camps.Where(c => c.NeutralType != "NEUTRAL_SUPER").ToList(); // the mid-boss isn't a camp
+
+        // Spawn points name their camp with a prefix; a matching bug would leave camps without units.
+        Assert.All(camps, c => Assert.True(c.Units.Count > 0, $"{c.Name} ({c.Subclass}) has no spawn points"));
+        Assert.True(camps.Count(c => c.SoulsAt(TimeSpan.Zero) != null) > camps.Count * 3 / 4);
+        // Rewards grow with match time, and stronger camps pay more.
+        Assert.All(camps.Where(c => c.SoulsAt(TimeSpan.Zero) != null), c => Assert.True(c.SoulsAt(TimeSpan.FromMinutes(20)) > c.SoulsAt(TimeSpan.Zero)));
+        double Mean(string type) => camps.Where(c => c.NeutralType == type).Average(c => c.SoulsAt(TimeSpan.Zero) ?? 0);
+        Assert.True(Mean("NEUTRAL_NPC_WEAK") < Mean("NEUTRAL_NPC_NORMAL") && Mean("NEUTRAL_NPC_NORMAL") < Mean("NEUTRAL_NPC_STRONG"));
+    }
+
+    [Fact]
     public void Objectives_are_placed_symmetrically_for_both_teams()
     {
         var objectives = Map.Value.Objectives;
