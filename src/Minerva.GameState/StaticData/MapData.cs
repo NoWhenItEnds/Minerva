@@ -33,7 +33,8 @@ public sealed record CampInfo(
 /// Reward growth (<c>m_flGoldRewardBonusPercentPerMinute</c>): linear, in percent of the base per minute of match time.
 /// Checked against a recorded match: a 45-soul unit paid 46 at 3:24.
 /// </param>
-public sealed record CampUnit(string Subclass, double? Souls, double BonusPercentPerMinute)
+/// <param name="Class">The unit's entity class (<c>_class</c>), e.g. <c>npc_trooper_neutral</c>.</param>
+public sealed record CampUnit(string Subclass, double? Souls, double BonusPercentPerMinute, string? Class = null)
 {
     public double? SoulsAt(TimeSpan clock) =>
         Souls * (1 + BonusPercentPerMinute / 100 * Math.Max(0, clock.TotalMinutes));
@@ -128,7 +129,8 @@ public sealed class MapData
                 continue;
             if (!campUnits.TryGetValue(campName, out var list)) campUnits[campName] = list = [];
             var def = units.GetValueOrDefault(unit);
-            list.Add(new CampUnit(unit, Inherited(units, def, "m_flGoldReward"), Inherited(units, def, "m_flGoldRewardBonusPercentPerMinute") ?? 0));
+            list.Add(new CampUnit(unit, Inherited(units, def, "m_flGoldReward"), Inherited(units, def, "m_flGoldRewardBonusPercentPerMinute") ?? 0,
+                InheritedString(units, def, "_class")));
         }
 
         var camps = new List<CampInfo>();

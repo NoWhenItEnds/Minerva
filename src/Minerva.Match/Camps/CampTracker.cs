@@ -23,6 +23,12 @@ public enum ClearEvidence
     /// <summary>Each of the camp's units matched one of the local player's soul gains while next to it.</summary>
     Kills,
 
+    /// <summary>
+    /// The local player's soul gains while at the camp covered what was left of it, after at least one exact kill there
+    /// (or melee range of a Sinner's Sacrifice, which pays per hit): kills that arrived together with other souls.
+    /// </summary>
+    Souls,
+
     /// <summary>A hero stayed at the camp while their net worth rose by about the camp's value.</summary>
     NetWorth,
 }
@@ -48,20 +54,25 @@ public sealed record CampEvent(TimeSpan Clock, CampInfo Camp, string Description
 /// positions and souls. A camp's respawn timer starts when its last unit dies; a camp with a survivor doesn't respawn.
 /// <list type="bullet">
 /// <item>The local player's unspent souls are exact: a gain next to a camp that equals the reward of some of its
-/// remaining units marks those units killed. In a recorded match, three +46 gains 200–300 units from a weak camp
-/// were its three 45-soul units (plus time growth).</item>
+/// remaining units marks those units killed. Camp souls are split evenly between the allies who damaged the unit, so
+/// with allies at the camp a gain can be a half or a third of the reward.</item>
+/// <item>Kills often arrive in the same update as other souls (a lane trooper, a few souls of trickle), so the gains of
+/// a whole visit are also counted: once the player leaves, a camp they killed at least one unit of is cleared if the
+/// visit's other gains cover what was left.</item>
+/// <item>A Sinner's Sacrifice pays a fraction of its value per melee hit and about half on the final hit, so it is
+/// only ever cleared by the visit rule, and only when the player came within melee range.</item>
 /// <item>Other heroes' souls are only the top bar's abbreviated net worth, so their clears are inferred when a hero
-/// stays at a camp while their net worth rises by most of its value.</item>
+/// stays at a camp away from lanes while their net worth rises by most of its value.</item>
 /// </list>
-/// Positions come from the minimap (fit error ~400 world units), hence the generous radius.
+/// Positions come from the minimap, hence the generous radius.
 /// </summary>
 public sealed class CampTracker
 {
     /// <summary>A hero this close to a camp (in the map plane) may be fighting it.</summary>
     public const float NearDistance = 900;
 
-    /// <summary>Net worth rise, as a fraction of the camp's value, taken as another hero clearing it.</summary>
-    public const double NetWorthClearFraction = 0.6;
+    /// <summary>Melee range of a Sinner's Sacrifice, allowing for minimap error.</summary>
+    public const float MeleeDistance = 450;
 
     /// <summary>
     /// Other heroes are only watched at camps when at least this far from every lane path. Their net worth also rises
@@ -69,6 +80,21 @@ public sealed class CampTracker
     /// 1200: rotations and camps), so closer than this a rise can't be told from laning.
     /// </summary>
     public const float LaneMargin = 600;
+
+    /// <summary>Net worth rise, as a fraction of the camp's value, taken as another hero clearing it.</summary>
+    public const double NetWorthClearFraction = 0.6;
+
+    /// <summary>Visit souls, as a fraction of the camp's remaining value (per sharer), taken as the local player clearing it.</summary>
+    public const double VisitClearFraction = 0.8;
+
+    /// <summary>
+    /// Souls a gain may carry beyond its kills (trickle of a few souls lands in the same update; +7 seen). Kept below
+    /// the 10–12 souls a lane trooper pays over a small camp's unit, so a trooper next to a camp isn't taken as a kill.
+    /// </summary>
+    public const int ExtraSouls = 8;
+
+    /// <summary>The unit class that pays per hit instead of on death.</summary>
+    public const string PaysPerHitClass = "npc_neutral_sinners_sacrifice";
 
     private static readonly TimeSpan MinDwell = TimeSpan.FromSeconds(3);
 
@@ -78,6 +104,7 @@ public sealed class CampTracker
     private TimeSpan? _clock;
     private int? _souls;
     private Vector2? _position;
+    private Visit? _visit;
 
     public CampTracker(MapData map)
     {
@@ -87,6 +114,8 @@ public sealed class CampTracker
     }
 
     public IReadOnlyList<CampState> Camps => _camps.Select(c => c.State(_clock ?? TimeSpan.Zero)).ToList();
+
+    private static bool PaysPerHit(CampUnit unit) => unit.Class == PaysPerHitClass;
 
     /// <summary>Feed one update; returns what changed.</summary>
     public IReadOnlyList<CampEvent> Update(CampObservation observation)
@@ -100,10 +129,19 @@ public sealed class CampTracker
             if (camp.Advance(now) is { } spawned) events.Add(new CampEvent(now, camp.Info, spawned));
 
         var local = observation.LocalPlayer;
-        if (local is { Dead: false } && observation.UnspentSouls is { } souls && _souls is { } before && souls > before)
-            Attribute(now, souls - before, local.World, _position, events);
+        var alive = local is { Dead: false };
+        var position = alive ? local!.World : null;
+        var allies = observation.Heroes
+            .Where(h => h is { IsAlly: true, IsLocalPlayer: false, Visible: true, Dead: false, World: not null })
+            .Select(h => h.World!.Value).ToList();
+
+        // Gains first, while the visit they belong to is still open (souls can show a moment after the player moves on).
+        if (alive && observation.UnspentSouls is { } souls && _souls is { } before && souls > before)
+            Attribute(now, souls - before, position, _position, allies, events);
         _souls = observation.UnspentSouls ?? _souls;
-        _position = local is { Dead: false } ? local.World : null;
+        _position = position;
+
+        UpdateVisit(now, position, allies, events);
 
         foreach (var hero in observation.Heroes.Where(h => !h.IsLocalPlayer)) Watch(now, hero, events);
 
@@ -117,43 +155,77 @@ public sealed class CampTracker
         _dwells.Clear();
         _souls = null;
         _position = null;
+        _visit = null;
     }
 
-    /// <summary>Match a soul gain of the local player to units of a camp they are next to.</summary>
-    private void Attribute(TimeSpan now, int gain, Vector2? position, Vector2? previous, List<CampEvent> events)
-    {
-        var near = _camps
+    private IEnumerable<(Camp Camp, float Distance)> UpCampsNear(Vector2? position, Vector2? previous = null) =>
+        _camps
             .Where(c => c.Status == CampStatus.Up && c.UnitsLeft.Count > 0)
             .Select(c => (Camp: c, Distance: Math.Min(Distance(c, position), Distance(c, previous))))
             .Where(c => c.Distance <= NearDistance)
             .OrderBy(c => c.Distance);
-        foreach (var (camp, _) in near)
+
+    /// <summary>Match a soul gain of the local player to units of a camp they are next to.</summary>
+    private void Attribute(TimeSpan now, int gain, Vector2? position, Vector2? previous, List<Vector2> allies, List<CampEvent> events)
+    {
+        foreach (var (camp, _) in UpCampsNear(position, previous))
         {
-            if (camp.MatchKills(now, gain) is not { } killed) continue;
-            camp.Kill(killed);
+            var sharers = 1 + allies.Count(a => Distance(camp, a) <= NearDistance);
+            if (camp.MatchKills(now, gain, sharers) is not { } match) continue;
+            camp.Kill(match.Units);
+            if (_visit?.Camp == camp) _visit.Kills += match.Units.Count;
+            var shared = match.Sharers > 1 ? $", shared {match.Sharers} ways" : "";
             if (camp.UnitsLeft.Count == 0)
             {
                 camp.Clear(now, CampClearer.You, ClearEvidence.Kills);
-                events.Add(new CampEvent(now, camp.Info, $"cleared by you (+{gain} souls)"));
+                events.Add(new CampEvent(now, camp.Info, $"cleared by you (+{gain} souls{shared})"));
             }
             else
             {
-                events.Add(new CampEvent(now, camp.Info, $"{killed.Count} unit(s) killed by you (+{gain} souls), {camp.UnitsLeft.Count} left"));
+                events.Add(new CampEvent(now, camp.Info, $"{match.Units.Count} unit(s) killed by you (+{gain} souls{shared}), {camp.UnitsLeft.Count} left"));
             }
             return;
         }
+
+        if (_visit != null)
+        {
+            _visit.Souls += gain;
+            _visit.LastGain = now;
+        }
+    }
+
+    /// <summary>Follow which camp the local player is at; when they leave one, check whether the visit cleared it.</summary>
+    private void UpdateVisit(TimeSpan now, Vector2? position, List<Vector2> allies, List<CampEvent> events)
+    {
+        var (at, distance) = UpCampsNear(position).FirstOrDefault();
+        if (_visit != null && _visit.Camp != at)
+        {
+            EndVisit(_visit, events);
+            _visit = null;
+        }
+        if (at == null) return;
+        _visit ??= new Visit(at);
+        _visit.Closest = Math.Min(_visit.Closest, distance);
+        _visit.Sharers = Math.Max(_visit.Sharers, 1 + allies.Count(a => Distance(at, a) <= NearDistance));
+    }
+
+    private static void EndVisit(Visit visit, List<CampEvent> events)
+    {
+        var camp = visit.Camp;
+        if (camp.Status != CampStatus.Up || camp.UnitsLeft.Count == 0 || visit.LastGain is not { } last) return;
+        // Proof the player fought this camp, not just passed it while earning elsewhere.
+        var fought = visit.Kills > 0 || (camp.UnitsLeft.Any(PaysPerHit) && visit.Closest <= MeleeDistance);
+        var left = camp.SoulsLeft(last);
+        if (!fought || left <= 0 || visit.Souls < VisitClearFraction * left / visit.Sharers) return;
+        camp.Clear(last, CampClearer.You, ClearEvidence.Souls);
+        events.Add(new CampEvent(last, camp.Info, $"cleared by you (+{visit.Souls} souls while there for {left:0} left)"));
     }
 
     /// <summary>Follow another hero's stay at a camp and their net worth while there.</summary>
     private void Watch(TimeSpan now, HeroSighting hero, List<CampEvent> events)
     {
         var camp = hero is { Visible: true, Dead: false, World: { } at } && _map.DistanceToLane(at) >= LaneMargin
-            ? _camps.Where(c => c.Status == CampStatus.Up && c.UnitsLeft.Count > 0)
-                .Select(c => (Camp: c, Distance: Distance(c, at)))
-                .Where(c => c.Distance <= NearDistance)
-                .OrderBy(c => c.Distance)
-                .Select(c => c.Camp)
-                .FirstOrDefault()
+            ? UpCampsNear(at).Select(c => c.Camp).FirstOrDefault()
             : null;
         if (camp == null)
         {
@@ -178,6 +250,7 @@ public sealed class CampTracker
             var by = hero.IsAlly ? CampClearer.Ally : CampClearer.Enemy;
             camp.Clear(now, by, ClearEvidence.NetWorth);
             _dwells.Remove(hero.Slot);
+            if (_visit?.Camp == camp) _visit = null;
             events.Add(new CampEvent(now, camp.Info, $"probably cleared by {(hero.IsAlly ? "an ally" : "an enemy")} (slot {hero.Slot}, net worth +{rise} at the camp)"));
         }
     }
@@ -186,6 +259,20 @@ public sealed class CampTracker
         at is { } p ? Vector2.Distance(new Vector2(camp.Info.Position.X, camp.Info.Position.Y), p) : float.MaxValue;
 
     private sealed record Dwell(Camp Camp, TimeSpan Since, int? NetWorth);
+
+    /// <summary>The local player's stay at one camp.</summary>
+    private sealed class Visit(Camp camp)
+    {
+        public Camp Camp { get; } = camp;
+        public int Kills { get; set; }
+        /// <summary>Gains during the visit not matched to kills.</summary>
+        public int Souls { get; set; }
+        public TimeSpan? LastGain { get; set; }
+        public float Closest { get; set; } = float.MaxValue;
+        public int Sharers { get; set; } = 1;
+    }
+
+    private sealed record KillMatch(List<CampUnit> Units, int Sharers);
 
     private sealed class Camp(CampInfo info)
     {
@@ -223,29 +310,33 @@ public sealed class CampTracker
         public double SoulsLeft(TimeSpan now) => UnitsLeft.Sum(u => u.SoulsAt(now) ?? 0);
 
         /// <summary>
-        /// The remaining units whose rewards add up to <paramref name="gain"/> (one gain can be several kills at once),
-        /// or null. Rewards are rounded by the game; allow a few souls either way.
+        /// The remaining units whose rewards add up to <paramref name="gain"/> (one gain can be several kills), split
+        /// between up to <paramref name="maxSharers"/> allies, or null. Rewards are rounded per unit (seen up to 2 souls
+        /// under the formula), and other souls can land in the same update.
         /// </summary>
-        public List<CampUnit>? MatchKills(TimeSpan now, int gain)
+        public KillMatch? MatchKills(TimeSpan now, int gain, int maxSharers)
         {
-            var values = UnitsLeft.Select(u => u.SoulsAt(now)).ToList();
-            var tolerance = Math.Max(3, gain * 0.03);
-            List<CampUnit>? best = null;
-            for (var mask = 1; mask < 1 << UnitsLeft.Count; mask++)
+            var units = UnitsLeft.Where(u => !PaysPerHit(u) && u.Souls != null).ToList();
+            var values = units.Select(u => u.SoulsAt(now)!.Value).ToList();
+            for (var sharers = 1; sharers <= Math.Min(maxSharers, 4); sharers++)
             {
-                double sum = 0;
-                var subset = new List<CampUnit>();
-                var known = true;
-                for (var i = 0; i < UnitsLeft.Count; i++)
+                List<CampUnit>? best = null;
+                for (var mask = 1; mask < 1 << units.Count; mask++)
                 {
-                    if ((mask & (1 << i)) == 0) continue;
-                    if (values[i] is not { } v) { known = false; break; }
-                    sum += v;
-                    subset.Add(UnitsLeft[i]);
+                    double sum = 0;
+                    var subset = new List<CampUnit>();
+                    for (var i = 0; i < units.Count; i++)
+                    {
+                        if ((mask & (1 << i)) == 0) continue;
+                        sum += values[i] / sharers;
+                        subset.Add(units[i]);
+                    }
+                    var extra = gain - sum;
+                    if (extra >= -Math.Max(2, sum * 0.04) && extra <= ExtraSouls && (best == null || subset.Count < best.Count)) best = subset;
                 }
-                if (known && Math.Abs(sum - gain) <= tolerance && (best == null || subset.Count < best.Count)) best = subset;
+                if (best != null) return new KillMatch(best, sharers);
             }
-            return best;
+            return null;
         }
 
         public void Kill(List<CampUnit> units)

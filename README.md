@@ -144,8 +144,12 @@ Tests that need the game skip themselves if Deadlock isn't installed (or set `DE
     independently. If they ever disagree, it warns and doesn't link names to positions.
   - Top bar rows and minimap hero icons are in the same player-slot order: all five deaths in the match appeared on
     row `TopBarPlayerN` and icon `Panel#(N+4)` at the same moment. That links names to map positions.
-  - K/D/A stayed 0/0/0 all match although heroes died: the top bar doesn't update it while hidden (probably only with
-    the scoreboard open). Deaths can be counted from the respawn timer instead.
+  - K/D/A stayed 0/0/0 all match although heroes died, in both recordings, even with the scoreboard opened three
+    times for ~2 s in the second (the K/D/A labels were shown, at zero height, still reading 0 after the local
+    player's death). The in-match scoreboard is the expanded top bar; there's no other K/D/A label. Don't use it.
+    Deaths can be counted from the respawn timer, and kills read from the kill feed (`citadel_hud_data_feed_info`:
+    `{s:killer_name}`, `{s:victim_name}` and the soul bag amount). The feed shows persona names (in bot matches the
+    hero's name), so mapping to heroes goes through each top bar row's `player_name`.
   - Reading the whole tree takes ~25 ms once warm (~190 ms for the first read); fine at one update per 1.5 s.
   - Some layouts are loaded more than once. The souls display is also inside the shop, where (closed, so hidden) the
     mod only refreshes it on complete walks, ~15 s apart. Readers take the copy on screen (`HudBindings.Primary`).
@@ -164,10 +168,20 @@ Tests that need the game skip themselves if Deadlock isn't installed (or set `DE
     they are 600+ units off every lane: lane troopers raise net worth just as fast.
   - Camps have no HUD or minimap icons; community guides say the game now shows a respawn timer in the world, which
     the HUD tree doesn't carry.
+  - Camp souls are split evenly between the allied players who damaged the unit in the last 5 s, and camp units
+    drop no orbs (Deadlock wiki). The tracker allows a half or a third of a reward only with allies at the camp.
+  - Kills often land in the same update as other souls: a lane trooper (+107 = 47 + 60 in the 10-minute match) or a
+    few souls of trickle (+5 to +13 appear throughout). The tracker allows up to 8 extra souls per match (a lane
+    trooper pays 10–12 more than a small camp's unit), and counts a visit's other gains toward clearing a camp the
+    player killed part of.
+  - A Sinner's Sacrifice pays per melee hit (~1/20 light, ~1/10 heavy, about half on the final hit, shared between
+    hitters; Deadlock wiki). Seen as +34, +34, +68 next to a 170-soul machine. Its class
+    (`npc_neutral_sinners_sacrifice`) marks per-hit payout; it is cleared by a melee-range visit's souls.
+  - Reward growth: units paid 46–47 at 3–5 min (45 base) and 80–82 at 8:39–9:06 (75 base, formula 82): rewards can
+    come in up to ~3% under the linear formula.
 
 ## Open questions
 
-- Does the top bar's K/D/A update while the scoreboard is open?
 - Camp clears by others are inferred, not seen: are neutral souls shared with nearby allies (which would break exact
   matching when clearing together)? Does net-worth inference produce false clears in longer matches?
 - Is the mod acceptable in matchmaking? Only tested in bot matches so far.
