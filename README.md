@@ -101,6 +101,26 @@ Tests that need the game skip themselves if Deadlock isn't installed (or set `DE
 - Minimap: 69 icons (45 placed): 12 heroes (`MinimapPlayerSnippet`), ~31 bosses with health bars, the mid-boss with a
   `NextSpawnTimer` label, and the rest (camps, markers) to be identified by class.
 
+- Fourth bot match (5 min, layout fix in): worst frame 2–3 ms on 193 of 195 walks; updates every ~1.5 s. All 69
+  minimap icons report classes:
+  - heroes: `player` + `friend`/`enemy`, `localplayer`, `team1`/`team2`; `active` on an enemy means visible now
+    (without it, the icon is the last known position); `PlayerDead` while dead; `arrowUp`/`arrowDown` for height
+    relative to you. Positions for all 12 heroes update every walk.
+  - objectives: `boss` + `boss_icon_t1` (guardian) / `_t2` (walker) / `_t3` (patron) / `boss_barracks_icon` /
+    `boss_buildingzip`, with team and lane (`yellowLane`, `purpleLane`, `blueLane`); `mid_boss midboss_spawned`.
+  - markers: shops, tunnel exits, teleporters, gold spawn, stairs, capture points.
+  - **no camps**: the minimap no longer shows neutral camps (the `neutral_*` styles are leftovers). Camp state has to
+    be inferred.
+- Camp data is in the game files: the map's entity lump (`maps/dl_midtown.vpk` → `entities/default_ents.vents_c`) has
+  52 `info_neutral_trooper_camp` entities with world position, type (weak 4, medium 24, strong 12, vault 11, mid-boss
+  1) and some per-camp timing overrides; `scripts/misc.vdata` has each type's first spawn and respawn interval
+  (weak 120 s / 85 s, medium 300 s / 290 s, strong 480 s / 335 s, vault 480 s / 300 s).
+- Minimap ↔ world: the same entity lump has the walkers, patrons and barracks (`npc_boss_tier2/3`,
+  `npc_barrack_boss`, with `teamnumber` and lane in `BossName`). Fitting an affine transform from those 14 landmarks
+  to their minimap icons gives `x ≈ 0.0239·wx + 252`, `y ≈ −0.0242·wy + 254` (mean error 8 px, ~42 world units per
+  px; game team 2 = minimap `team1`). The minimap may be inverted per team (`invert_map`), so fit per match from the
+  landmarks rather than hardcoding.
+
 ## Open questions
 
 - What does the HUD panel tree expose in a match: scoreboard numbers, items, timers, minimap icon positions?
