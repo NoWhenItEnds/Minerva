@@ -19,6 +19,11 @@ public sealed partial class DeadlockInstall
 
     public string LocalizationDir => Path.Combine(CitadelDir, "resource", "localization");
 
+    public string MapsDir => Path.Combine(CitadelDir, "maps");
+
+    /// <summary>The package holding a map's world and entities, e.g. <c>maps\dl_midtown.vpk</c>.</summary>
+    public string MapVpk(string map) => Path.Combine(MapsDir, map + ".vpk");
+
     public static DeadlockInstall FromPath(string path)
     {
         // Accept the install root, game\ or game\citadel\.

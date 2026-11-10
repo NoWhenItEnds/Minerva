@@ -24,6 +24,9 @@ try
         "vpk" => VpkCommand(),
         "mod" => ModCommand(),
         "hud" => await HudCommand(),
+        "map" => MapCommand(),
+        "minimap" => MinimapCommand(),
+        "state" => StateCommand(),
         _ => Usage(),
     };
 }
@@ -50,6 +53,16 @@ int Usage()
           probe vpk ls [<vpk>] [<regex>]       List entries (default: the game's pak01_dir.vpk).
           probe vpk cat [<vpk>] <entry>        Print an entry, decompiling compiled resources.
           probe gamedata                       Load heroes/items from the local install and print a summary.
+          probe map [--map <name>] [--camps true]
+                                               Load a map's camps and objectives (default dl_midtown) and print a summary.
+
+        Interpretation:
+          probe minimap [--tree out/hud_tree.json] [--map <name>]
+                                               Read heroes and objectives from a HUD tree dump (written by hud watch)
+                                               and place them in world coordinates.
+          probe state [--tree out/hud_tree.json]
+                                               Read named HUD values (clock, souls, each hero's row) from a HUD tree
+                                               dump through the game's layout bindings.
 
         Demos (offline analysis; `record` is cheat-protected, so not live in matchmaking):
           probe census <demo.dem> [--at <s>]   List entity classes present at match clock <s> (default 600).
@@ -65,6 +78,87 @@ int Usage()
         Common options: --game-dir <path to Deadlock>
         """);
     return 1;
+}
+
+int MapCommand()
+{
+    var sw = Stopwatch.StartNew();
+    var map = MapData.Load(Install(), cli.Option("map") ?? MapData.DefaultMap);
+    Console.WriteLine($"{map.Map}: {map.Camps.Count} camps, {map.Objectives.Count} objectives ({sw.ElapsedMilliseconds} ms)");
+    Console.WriteLine();
+    Console.WriteLine("camps by type        count  first spawn  respawn");
+    foreach (var g in map.Camps.GroupBy(c => (c.Subclass, c.FirstSpawnSeconds, c.RespawnSeconds)).OrderBy(g => g.Key.Subclass).ThenBy(g => g.Key.FirstSpawnSeconds))
+        Console.WriteLine($"  {g.Key.Subclass,-20} {g.Count(),3}  {TimeSpan.FromSeconds(g.Key.FirstSpawnSeconds):m\\:ss}  {TimeSpan.FromSeconds(g.Key.RespawnSeconds),10:m\\:ss}");
+    if (cli.Option("camps") == "true")
+        foreach (var c in map.Camps.OrderBy(c => c.Subclass).ThenBy(c => c.Name))
+            Console.WriteLine($"    {c.Name,-40} {c.Subclass,-20} ({c.Position.X,7:0}, {c.Position.Y,7:0}, {c.Position.Z,6:0})  tether {c.TetherRadius?.ToString("0") ?? "-"}");
+    Console.WriteLine();
+    Console.WriteLine("objectives");
+    foreach (var o in map.Objectives.OrderBy(o => o.ClassName).ThenBy(o => o.Team).ThenBy(o => o.Name))
+        Console.WriteLine($"  {o.ClassName,-24} team {o.Team}  lane {o.Lane?.ToString() ?? "-"}  {o.Name,-28} ({o.Position.X,7:0}, {o.Position.Y,7:0})");
+    return 0;
+}
+
+int StateCommand()
+{
+    var treePath = cli.Option("tree") ?? Path.Combine(Environment.CurrentDirectory, "out", "hud_tree.json");
+    var panels = JsonSerializer.Deserialize<List<Minerva.Hud.HudPanel>>(File.ReadAllText(treePath))!
+        .ToDictionary(p => p.Key, StringComparer.Ordinal);
+    var install = Install();
+    var sw = Stopwatch.StartNew();
+    var reader = new Minerva.Match.MatchReader(LayoutCatalog.Load(install), GameData.Load(install), MapData.Load(install, cli.Option("map") ?? MapData.DefaultMap));
+    var loadMs = sw.ElapsedMilliseconds;
+    sw.Restart();
+    var state = reader.Read(panels);
+    Console.WriteLine($"{panels.Count} panels (load {loadMs} ms, read {sw.ElapsedMilliseconds} ms)");
+    foreach (var w in state.Warnings) Console.WriteLine($"warning: {w}");
+    var hud = state.Hud;
+    Console.WriteLine($"clock {state.Clock}  your team {state.LocalTeam}  unspent souls {state.UnspentSouls}  " +
+                      $"kills {hud.FriendlyKills}-{hud.EnemyKills}  networth {hud.FriendlyNetworth} vs {hud.EnemyNetworth}  mid-boss '{hud.MidBossTimer}'");
+    Console.WriteLine();
+    Console.WriteLine("      slot team hero            souls lvl  K/ D/ A   obj  health      state  position");
+    foreach (var h in state.Heroes.OrderByDescending(h => h.IsAlly).ThenBy(h => h.Slot))
+    {
+        var r = h.Row;
+        Console.WriteLine($"{(h.IsLocalPlayer ? "you  " : h.IsAlly ? "ally " : "enemy")} {h.Slot,4} {h.Team,4} {h.HeroName,-14} {r?.Souls,6} {r?.Level,3} " +
+                          $"{r?.Kills,2}/{r?.Deaths,2}/{r?.Assists,2} {r?.ObjectiveDamage,5}  " +
+                          $"{(r?.HealthFraction is { } f ? $"{f:P0}" : "-"),4} of {r?.MaxHealth?.ToString() ?? "?",4}  " +
+                          $"{(h.Dead ? "dead " : h.Visible ? "seen " : "last ")}  " +
+                          $"{(h.World is { } w ? $"({w.X,6:0}, {w.Y,6:0})" : "-")}");
+    }
+    return 0;
+}
+
+int MinimapCommand()
+{
+    var treePath = cli.Option("tree") ?? Path.Combine(Environment.CurrentDirectory, "out", "hud_tree.json");
+    var panels = JsonSerializer.Deserialize<List<Minerva.Hud.HudPanel>>(File.ReadAllText(treePath))!
+        .ToDictionary(p => p.Key, StringComparer.Ordinal);
+    var map = MapData.Load(Install(), cli.Option("map") ?? MapData.DefaultMap);
+    var state = new Minerva.Match.Minimap.MinimapReader(map).Read(panels);
+
+    foreach (var w in state.Warnings) Console.WriteLine($"warning: {w}");
+    if (state.Calibration is { } cal)
+        Console.WriteLine($"calibrated from {cal.Landmarks} landmarks: rms {cal.RmsPixels:0.0} px, {cal.WorldUnitsPerPixel:0} world units/px, " +
+                          $"minimap team1 = game team {cal.MinimapTeamToGameTeam[1]}");
+
+    string Near(System.Numerics.Vector2? world)
+    {
+        if (world is not { } w) return "";
+        var camp = map.Camps.MinBy(c => System.Numerics.Vector2.Distance(w, new(c.Position.X, c.Position.Y)))!;
+        return $"  near {camp.Name} ({System.Numerics.Vector2.Distance(w, new(camp.Position.X, camp.Position.Y)):0} u)";
+    }
+    string At(System.Numerics.Vector2? world) => world is { } w ? $"({w.X,6:0}, {w.Y,6:0})" : "(uncalibrated)";
+
+    Console.WriteLine($"\nheroes ({state.Heroes.Count})");
+    foreach (var h in state.Heroes.OrderByDescending(h => h.IsAlly).ThenByDescending(h => h.IsLocalPlayer))
+        Console.WriteLine($"  {(h.IsLocalPlayer ? "you  " : h.IsAlly ? "ally " : "enemy")} team {h.Team?.ToString() ?? "?"}  " +
+                          $"{(h.Dead ? "dead " : h.Visible ? "seen " : "last ")}{(h.Elevation > 0 ? "above" : h.Elevation < 0 ? "below" : "     ")} " +
+                          $"{At(h.World)}{(h.OnMap ? Near(h.World) : "  off map")}");
+    Console.WriteLine($"\nobjectives ({state.Objectives.Count})");
+    foreach (var o in state.Objectives.OrderBy(o => o.Kind).ThenBy(o => o.Team).ThenBy(o => o.Lane))
+        Console.WriteLine($"  {o.Kind,-9} team {o.Team?.ToString() ?? "-"}  {o.Lane ?? "",-7} {(o.Active ? "up  " : "down")}  {At(o.World)}");
+    return 0;
 }
 
 DeadlockInstall Install() =>

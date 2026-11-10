@@ -28,7 +28,8 @@ Deadlock patches constantly, so nothing patch-specific is hand-maintained:
 | `Minerva.Mod/Panorama/minerva.js` | In-game script. **Generic**: walks the whole HUD panel tree and logs changes, with no Deadlock panel IDs hardcoded. | Unaffected; HUD changes only change what the companion sees |
 | `Minerva.Mod/ClassProbes.cs` | Panorama can't list a panel's classes, only test one (`BHasClass`). For layouts whose panels carry meaning in classes (the minimap: hero/camp/boss, enemy, dead, camp up), the builder reads the layout's stylesheets from the game files and writes the class list into the script. | The class list is regenerated; only a renamed layout needs a code change (reported as a warning) |
 | `Minerva.Hud` | Follows `console.log`, reassembles the mod's messages, mirrors the HUD tree. | Unaffected |
-| `Minerva.GameState` | Static game data (heroes, items) read from the VPK, plus demo parsing for offline analysis. | Data is re-read from game files automatically |
+| `Minerva.GameState` | Static game data read from the game's packages: heroes and items (`GameData`), and the map's camps (position, type, first spawn, respawn, tether) and team objectives (`MapData`, from the map's entity lump plus `scripts/misc.vdata`). Also demo parsing for offline analysis. | Data is re-read from game files automatically |
+| `Minerva.Match` | Interpretation: HUD tree + static data → match state. `Bindings/` matches every live panel to its node in its layout file (`LayoutCatalog` reads the game's layouts) by id, then type and position, so a label is known by its dialog variable (`{i:kills}` in `citadel_hud_top_bar_player`) instead of a panel path. `Hud/` reads named values that way (all names in `HudVocabulary`, checked against the installed layouts at start). `MatchReader` joins top bar rows with minimap icons by player slot order. `Minimap/` reads hero and objective icons by their classes (all Deadlock class names in `MinimapVocabulary`) and calibrates minimap ↔ world per match by fitting the walker/patron/barracks icons to the same objectives in `MapData`, which also tells which minimap team is which game team. Reports what it expected but didn't find. | Class renames: one line in `MinimapVocabulary`, flagged by a warning; transform and team mapping are refitted every match |
 | `Minerva.Probe` | Development CLI. | — |
 
 The interpretation layer (which panel holds souls, the clock, objectives, minimap icons) comes next, built from what
@@ -51,6 +52,10 @@ probe hud watch            # follow console.log
 Start Deadlock and open a **bot match**. `hud watch` should print `[hello]` when the HUD loads, then `[full]`/`[delta]`
 lines every second with the mod→companion latency. The latest tree is written to `out/hud_tree.json`. Remove the addon
 with `probe mod uninstall`.
+
+Then `probe map` prints the map's camps and objectives from the game files, `probe minimap` reads heroes and
+objectives from `out/hud_tree.json` and places them in world coordinates (with each hero's nearest camp), and
+`probe state` prints the whole match state: clock, souls, and each hero's row joined with their map position.
 
 ## Tests
 
@@ -120,6 +125,18 @@ Tests that need the game skip themselves if Deadlock isn't installed (or set `DE
   to their minimap icons gives `x ≈ 0.0239·wx + 252`, `y ≈ −0.0242·wy + 254` (mean error 8 px, ~42 world units per
   px; game team 2 = minimap `team1`). The minimap may be inverted per team (`invert_map`), so fit per match from the
   landmarks rather than hardcoding.
+
+- HUD values by binding (from the recorded match): every hero's name (→ hero id via the game's localization), souls
+  (abbreviated, `2.1k`), level, health bar fraction, max health and resists, respawn timer; the match clock, team net
+  worth and kills, the local player's exact unspent souls. 17.5k of 25.7k panels match a layout node.
+  - The top bar's team containers are named `TeamFriendly`/`TeamEnemy` but are fixed game teams (their layout
+    attribute `team="2"`/`"3"`): the local player was under `TeamEnemy`. The score labels, by contrast, are relative to
+    the local player. Both conventions confirmed against the recorded match (deaths, net worth sums).
+  - Top bar rows and minimap hero icons are in the same player-slot order: all five deaths in the match appeared on
+    row `TopBarPlayerN` and icon `Panel#(N+4)` at the same moment. That links names to map positions.
+  - K/D/A stayed 0/0/0 all match although heroes died: the top bar doesn't update it while hidden (probably only with
+    the scoreboard open). Deaths can be counted from the respawn timer instead.
+  - Reading the whole tree takes ~190 ms; fine at one update per 1.5 s, but worth making incremental.
 
 ## Open questions
 

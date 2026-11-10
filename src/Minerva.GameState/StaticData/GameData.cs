@@ -1,9 +1,6 @@
 using System.Text.RegularExpressions;
 using Minerva.GameState.Live;
 using SteamDatabase.ValvePak;
-using ValveKeyValue;
-using ValveResourceFormat;
-using ValveResourceFormat.ResourceTypes;
 
 namespace Minerva.GameState.StaticData;
 
@@ -58,7 +55,7 @@ public sealed partial class GameData
         package.Read(install.MainVpk);
 
         var heroes = new Dictionary<int, HeroInfo>();
-        foreach (var (className, def) in ReadVData(package, "scripts/heroes.vdata_c"))
+        foreach (var (className, def) in VData.Read(package, "scripts/heroes.vdata_c"))
         {
             if (!className.StartsWith("hero_", StringComparison.Ordinal)) continue;
             if (!def.TryGetValue("m_HeroID", out var idObj)) continue;
@@ -67,42 +64,22 @@ public sealed partial class GameData
         }
 
         var abilities = new Dictionary<uint, AbilityInfo>();
-        foreach (var (className, def) in ReadVData(package, "scripts/abilities.vdata_c"))
+        foreach (var (className, def) in VData.Read(package, "scripts/abilities.vdata_c"))
         {
-            var type = GetString(def, "m_eAbilityType");
+            var type = VData.GetString(def, "m_eAbilityType");
             var isItem = type == "EAbilityType_Item";
             var info = new AbilityInfo(
                 StringToken.Hash(className),
                 className,
                 modNames.GetValueOrDefault(className) ?? className,
                 isItem,
-                isItem ? GetString(def, "m_iItemTier") : null,
-                isItem ? GetString(def, "m_eItemSlotType") : null);
+                isItem ? VData.GetString(def, "m_iItemTier") : null,
+                isItem ? VData.GetString(def, "m_eItemSlotType") : null);
             abilities[info.Token] = info;
         }
 
         return new GameData(heroes, abilities, ReadBuild(install));
     }
-
-    private static IEnumerable<(string Key, KVObject Value)> ReadVData(Package package, string path)
-    {
-        var entry = package.FindEntry(path) ?? throw new FileNotFoundException($"'{path}' not found in {package.FileName}.");
-        package.ReadEntry(entry, out var bytes);
-        using var resource = new Resource();
-        resource.Read(new MemoryStream(bytes));
-        if (resource.DataBlock is not BinaryKV3 kv3)
-            throw new InvalidDataException($"'{path}' is not KV3 data (got {resource.DataBlock?.GetType().Name}).");
-
-        var root = kv3.Data.Root;
-        foreach (var key in root.Keys)
-        {
-            if (root.TryGetValue(key, out var value) && value.ValueType == KVValueType.Collection)
-                yield return (key, value);
-        }
-    }
-
-    private static string? GetString(KVObject obj, string key) =>
-        obj.TryGetValue(key, out var v) && v.ValueType == KVValueType.String ? (string)v : null;
 
     private static Dictionary<string, string> ReadLocalization(string path)
     {

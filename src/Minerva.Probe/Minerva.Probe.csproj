@@ -5,6 +5,7 @@
     <ProjectReference Include="..\Minerva.Mod\Minerva.Mod.csproj" />
     <ProjectReference Include="..\Minerva.Hud\Minerva.Hud.csproj" />
     <ProjectReference Include="..\Minerva.Source2\Minerva.Source2.csproj" />
+    <ProjectReference Include="..\Minerva.Match\Minerva.Match.csproj" />
   </ItemGroup>
 
   <PropertyGroup>

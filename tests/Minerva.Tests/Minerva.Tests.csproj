@@ -24,9 +24,14 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="Fixtures\**" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\src\Minerva.Source2\Minerva.Source2.csproj" />
     <ProjectReference Include="..\..\src\Minerva.Mod\Minerva.Mod.csproj" />
     <ProjectReference Include="..\..\src\Minerva.Hud\Minerva.Hud.csproj" />
+    <ProjectReference Include="..\..\src\Minerva.Match\Minerva.Match.csproj" />
   </ItemGroup>
 
 </Project>

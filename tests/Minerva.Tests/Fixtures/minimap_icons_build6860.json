@@ -1,0 +1,692 @@
+[
+  {
+    "Key": "/Hud/Panel#0/gameplay_hud/Panel#16/minimap_persp/minimap_container/HudMinimapContainer/hud_minimap/Panel#10",
+    "Classes": "map_button enemy player team1",
+    "Visible": true,
+    "X": 424,
+    "Y": 217,
+    "Width": 28,
+    "Height": 28,
+    "Layout": "hud_minimap"
+  },
+  {
+    "Key": "/Hud/Panel#0/gameplay_hud/Panel#16/minimap_persp/minimap_container/HudMinimapContainer/hud_minimap/Panel#11",
+    "Classes": "map_button active friend player team2",
+    "Visible": true,
+    "X": 240,
+    "Y": 242,
+    "Width": 29,
+    "Height": 29,
+    "Layout": "hud_minimap"
+  },
+  {
+    "Key": "/Hud/Panel#0/gameplay_hud/Panel#16/minimap_persp/minimap_container/HudMinimapContainer/hud_minimap/Panel#12",
+    "Classes": "map_button active friend player team2",
+    "Visible": true,
+    "X": 228,
+    "Y": 249,
+    "Width": 28,
+    "Height": 28,
+    "Layout": "hud_minimap"
+  },
+  {
+    "Key": "/Hud/Panel#0/gameplay_hud/Panel#16/minimap_persp/minimap_container/HudMinimapContainer/hud_minimap/Panel#13",
+    "Classes": "map_button active friend player team2",
+    "Visible": true,
+    "X": 71,
+    "Y": 252,
+    "Width": 35,
+    "Height": 35,
+    "Layout": "hud_minimap"
+  },
+  {
+    "Key": "/Hud/Panel#0/gameplay_hud/Panel#16/minimap_persp/minimap_container/HudMinimapContainer/hud_minimap/Panel#14",
+    "Classes": "map_button active friend player team2",
+    "Visible": true,
+    "X": 62,
+    "Y": 222,
+    "Width": 28,
+    "Height": 28,
+    "Layout": "hud_minimap"
+  },
+  {
+    "Key": "/Hud/Panel#0/gameplay_hud/Panel#16/minimap_persp/minimap_container/HudMinimapContainer/hud_minimap/Panel#15",
+    "Classes": "map_button active friend player team2",
+    "Visible": true,
+    "X": 379,
+    "Y": 117,
+    "Width": 35,
+    "Height": 35,
+    "Layout": "hud_minimap"
+  },
+  {
+    "Key": "/Hud/Panel#0/gameplay_hud/Panel#16/minimap_persp/minimap_container/HudMinimapContainer/hud_minimap/Panel#16",
+    "Classes": "map_button tier1_shop",
+    "Visible": true,
+    "X": null,
+    "Y": null,
+    "Width": 0,
+    "Height": 0,
+    "Layout": "hud_minimap"
+  },
+  {
+    "Key": "/Hud/Panel#0/gameplay_hud/Panel#16/minimap_persp/minimap_container/HudMinimapContainer/hud_minimap/Panel#17",
+    "Classes": "map_button active boss boss_icon_t3 friend team2",
+    "Visible": true,
+    "X": 226,
+    "Y": -13,
+    "Width": 112,
+    "Height": 112,
+    "Layout": "hud_minimap"
+  },
+  {
+    "Key": "/Hud/Panel#0/gameplay_hud/Panel#16/minimap_persp/minimap_container/HudMinimapContainer/hud_minimap/Panel#18",
+    "Classes": "map_button active boss boss_icon_t3 enemy team1",
+    "Visible": true,
+    "X": 166,
+    "Y": 409,
+    "Width": 112,
+    "Height": 112,
+    "Layout": "hud_minimap"
+  },
+  {
+    "Key": "/Hud/Panel#0/gameplay_hud/Panel#16/minimap_persp/minimap_container/HudMinimapContainer/hud_minimap/Panel#19",
+    "Classes": "map_button active boss boss_buildingzip enemy team1",
+    "Visible": true,
+    "X": 237,
+    "Y": 417,
+    "Width": 45,
+    "Height": 45,
+    "Layout": "hud_minimap"
+  },
+  {
+    "Key": "/Hud/Panel#0/gameplay_hud/Panel#16/minimap_persp/minimap_container/HudMinimapContainer/hud_minimap/Panel#20",
+    "Classes": "map_button active boss boss_icon_t2 friend team2 yellowLane",
+    "Visible": true,
+    "X": 81,
+    "Y": 90,
+    "Width": 90,
+    "Height": 90,
+    "Layout": "hud_minimap"
+  },
+  {
+    "Key": "/Hud/Panel#0/gameplay_hud/Panel#16/minimap_persp/minimap_container/HudMinimapContainer/hud_minimap/Panel#21",
+    "Classes": "map_button active boss boss_icon_t2 friend purpleLane team2",
+    "Visible": true,
+    "X": 357,
+    "Y": 96,
+    "Width": 90,
+    "Height": 90,
+    "Layout": "hud_minimap"
+  },
+  {
+    "Key": "/Hud/Panel#0/gameplay_hud/Panel#16/minimap_persp/minimap_container/HudMinimapContainer/hud_minimap/Panel#22",
+    "Classes": "map_button active boss boss_icon_t2 enemy purpleLane team1",
+    "Visible": true,
+    "X": 339,
+    "Y": 328,
+    "Width": 90,
+    "Height": 90,
+    "Layout": "hud_minimap"
+  },
+  {
+    "Key": "/Hud/Panel#0/gameplay_hud/Panel#16/minimap_persp/minimap_container/HudMinimapContainer/hud_minimap/Panel#23",
+    "Classes": "map_button active boss boss_icon_t2 enemy team1 yellowLane",
+    "Visible": true,
+    "X": 61,
+    "Y": 320,
+    "Width": 90,
+    "Height": 90,
+    "Layout": "hud_minimap"
+  },
+  {
+    "Key": "/Hud/Panel#0/gameplay_hud/Panel#16/minimap_persp/minimap_container/HudMinimapContainer/hud_minimap/Panel#24",
+    "Classes": "map_button active blueLane boss boss_icon_t2 enemy team1",
+    "Visible": true,
+    "X": 177,
+    "Y": 290,
+    "Width": 90,
+    "Height": 90,
+    "Layout": "hud_minimap"
+  },
+  {
+    "Key": "/Hud/Panel#0/gameplay_hud/Panel#16/minimap_persp/minimap_container/HudMinimapContainer/hud_minimap/Panel#25",
+    "Classes": "map_button active blueLane boss boss_icon_t2 friend team2",
+    "Visible": true,
+    "X": 237,
+    "Y": 128,
+    "Width": 90,
+    "Height": 90,
+    "Layout": "hud_minimap"
+  },
+  {
+    "Key": "/Hud/Panel#0/gameplay_hud/Panel#16/minimap_persp/minimap_container/HudMinimapContainer/hud_minimap/Panel#26",
+    "Classes": "map_button blueLane boss boss_barracks_icon",
+    "Visible": true,
+    "X": null,
+    "Y": null,
+    "Width": 0,
+    "Height": 0,
+    "Layout": "hud_minimap"
+  },
+  {
+    "Key": "/Hud/Panel#0/gameplay_hud/Panel#16/minimap_persp/minimap_container/HudMinimapContainer/hud_minimap/Panel#27",
+    "Classes": "map_button active blueLane boss boss_barracks_icon enemy team1",
+    "Visible": true,
+    "X": 194,
+    "Y": 354,
+    "Width": 56,
+    "Height": 56,
+    "Layout": "hud_minimap"
+  },
+  {
+    "Key": "/Hud/Panel#0/gameplay_hud/Panel#16/minimap_persp/minimap_container/HudMinimapContainer/hud_minimap/Panel#28",
+    "Classes": "map_button boss boss_barracks_icon purpleLane",
+    "Visible": true,
+    "X": null,
+    "Y": null,
+    "Width": 0,
+    "Height": 0,
+    "Layout": "hud_minimap"
+  },
+  {
+    "Key": "/Hud/Panel#0/gameplay_hud/Panel#16/minimap_persp/minimap_container/HudMinimapContainer/hud_minimap/Panel#29",
+    "Classes": "map_button active boss boss_barracks_icon enemy purpleLane team1",
+    "Visible": true,
+    "X": 248,
+    "Y": 380,
+    "Width": 56,
+    "Height": 56,
+    "Layout": "hud_minimap"
+  },
+  {
+    "Key": "/Hud/Panel#0/gameplay_hud/Panel#16/minimap_persp/minimap_container/HudMinimapContainer/hud_minimap/Panel#30",
+    "Classes": "map_button boss boss_barracks_icon yellowLane",
+    "Visible": true,
+    "X": null,
+    "Y": null,
+    "Width": 0,
+    "Height": 0,
+    "Layout": "hud_minimap"
+  },
+  {
+    "Key": "/Hud/Panel#0/gameplay_hud/Panel#16/minimap_persp/minimap_container/HudMinimapContainer/hud_minimap/Panel#31",
+    "Classes": "map_button active boss boss_barracks_icon enemy team1 yellowLane",
+    "Visible": true,
+    "X": 141,
+    "Y": 380,
+    "Width": 56,
+    "Height": 56,
+    "Layout": "hud_minimap"
+  },
+  {
+    "Key": "/Hud/Panel#0/gameplay_hud/Panel#16/minimap_persp/minimap_container/HudMinimapContainer/hud_minimap/Panel#32",
+    "Classes": "map_button blueLane boss boss_barracks_icon",
+    "Visible": true,
+    "X": null,
+    "Y": null,
+    "Width": 0,
+    "Height": 0,
+    "Layout": "hud_minimap"
+  },
+  {
+    "Key": "/Hud/Panel#0/gameplay_hud/Panel#16/minimap_persp/minimap_container/HudMinimapContainer/hud_minimap/Panel#33",
+    "Classes": "map_button active blueLane boss boss_barracks_icon friend team2",
+    "Visible": true,
+    "X": 254,
+    "Y": 98,
+    "Width": 56,
+    "Height": 56,
+    "Layout": "hud_minimap"
+  },
+  {
+    "Key": "/Hud/Panel#0/gameplay_hud/Panel#16/minimap_persp/minimap_container/HudMinimapContainer/hud_minimap/Panel#34",
+    "Classes": "map_button boss boss_barracks_icon yellowLane",
+    "Visible": true,
+    "X": null,
+    "Y": null,
+    "Width": 0,
+    "Height": 0,
+    "Layout": "hud_minimap"
+  },
+  {
+    "Key": "/Hud/Panel#0/gameplay_hud/Panel#16/minimap_persp/minimap_container/HudMinimapContainer/hud_minimap/Panel#35",
+    "Classes": "map_button active boss boss_barracks_icon friend team2 yellowLane",
+    "Visible": true,
+    "X": 200,
+    "Y": 72,
+    "Width": 56,
+    "Height": 56,
+    "Layout": "hud_minimap"
+  },
+  {
+    "Key": "/Hud/Panel#0/gameplay_hud/Panel#16/minimap_persp/minimap_container/HudMinimapContainer/hud_minimap/Panel#36",
+    "Classes": "map_button active friend shop_tunnel_exit team2",
+    "Visible": false,
+    "X": null,
+    "Y": null,
+    "Width": null,
+    "Height": null,
+    "Layout": "hud_minimap"
+  },
+  {
+    "Key": "/Hud/Panel#0/gameplay_hud/Panel#16/minimap_persp/minimap_container/HudMinimapContainer/hud_minimap/Panel#37",
+    "Classes": "map_button active friend team2",
+    "Visible": true,
+    "X": 372,
+    "Y": 184,
+    "Width": 35,
+    "Height": 35,
+    "Layout": "hud_minimap"
+  },
+  {
+    "Key": "/Hud/Panel#0/gameplay_hud/Panel#16/minimap_persp/minimap_container/HudMinimapContainer/hud_minimap/Panel#38",
+    "Classes": "map_button active friend shop_tunnel_exit team2",
+    "Visible": false,
+    "X": null,
+    "Y": null,
+    "Width": null,
+    "Height": null,
+    "Layout": "hud_minimap"
+  },
+  {
+    "Key": "/Hud/Panel#0/gameplay_hud/Panel#16/minimap_persp/minimap_container/HudMinimapContainer/hud_minimap/Panel#39",
+    "Classes": "map_button active friend shop_tunnel_exit team2",
+    "Visible": false,
+    "X": null,
+    "Y": null,
+    "Width": null,
+    "Height": null,
+    "Layout": "hud_minimap"
+  },
+  {
+    "Key": "/Hud/Panel#0/gameplay_hud/Panel#16/minimap_persp/minimap_container/HudMinimapContainer/hud_minimap/Panel#4",
+    "Classes": "map_button active arrowUp friend localplayer player team2",
+    "Visible": true,
+    "X": 254,
+    "Y": -17,
+    "Width": 60,
+    "Height": 60,
+    "Layout": "hud_minimap"
+  },
+  {
+    "Key": "/Hud/Panel#0/gameplay_hud/Panel#16/minimap_persp/minimap_container/HudMinimapContainer/hud_minimap/Panel#40",
+    "Classes": "map_button active enemy shop_tunnel_exit team1",
+    "Visible": false,
+    "X": null,
+    "Y": null,
+    "Width": null,
+    "Height": null,
+    "Layout": "hud_minimap"
+  },
+  {
+    "Key": "/Hud/Panel#0/gameplay_hud/Panel#16/minimap_persp/minimap_container/HudMinimapContainer/hud_minimap/Panel#41",
+    "Classes": "map_button active enemy shop_tunnel_exit team1",
+    "Visible": false,
+    "X": null,
+    "Y": null,
+    "Width": null,
+    "Height": null,
+    "Layout": "hud_minimap"
+  },
+  {
+    "Key": "/Hud/Panel#0/gameplay_hud/Panel#16/minimap_persp/minimap_container/HudMinimapContainer/hud_minimap/Panel#42",
+    "Classes": "map_button active enemy shop_tunnel_exit team1",
+    "Visible": false,
+    "X": null,
+    "Y": null,
+    "Width": null,
+    "Height": null,
+    "Layout": "hud_minimap"
+  },
+  {
+    "Key": "/Hud/Panel#0/gameplay_hud/Panel#16/minimap_persp/minimap_container/HudMinimapContainer/hud_minimap/Panel#43",
+    "Classes": "map_button active enemy team1",
+    "Visible": true,
+    "X": 75,
+    "Y": 287,
+    "Width": 35,
+    "Height": 35,
+    "Layout": "hud_minimap"
+  },
+  {
+    "Key": "/Hud/Panel#0/gameplay_hud/Panel#16/minimap_persp/minimap_container/HudMinimapContainer/hud_minimap/Panel#44",
+    "Classes": "map_button active mid_stairs",
+    "Visible": true,
+    "X": null,
+    "Y": null,
+    "Width": 0,
+    "Height": 0,
+    "Layout": "hud_minimap"
+  },
+  {
+    "Key": "/Hud/Panel#0/gameplay_hud/Panel#16/minimap_persp/minimap_container/HudMinimapContainer/hud_minimap/Panel#45",
+    "Classes": "map_button active mid_stairs right_stairs",
+    "Visible": true,
+    "X": null,
+    "Y": null,
+    "Width": 0,
+    "Height": 0,
+    "Layout": "hud_minimap"
+  },
+  {
+    "Key": "/Hud/Panel#0/gameplay_hud/Panel#16/minimap_persp/minimap_container/HudMinimapContainer/hud_minimap/Panel#46",
+    "Classes": "map_button capture_point",
+    "Visible": true,
+    "X": null,
+    "Y": null,
+    "Width": 0,
+    "Height": 0,
+    "Layout": "hud_minimap"
+  },
+  {
+    "Key": "/Hud/Panel#0/gameplay_hud/Panel#16/minimap_persp/minimap_container/HudMinimapContainer/hud_minimap/Panel#47",
+    "Classes": "map_button capture_point",
+    "Visible": true,
+    "X": null,
+    "Y": null,
+    "Width": 0,
+    "Height": 0,
+    "Layout": "hud_minimap"
+  },
+  {
+    "Key": "/Hud/Panel#0/gameplay_hud/Panel#16/minimap_persp/minimap_container/HudMinimapContainer/hud_minimap/Panel#48",
+    "Classes": "map_button active boss boss_buildingzip friend team2",
+    "Visible": true,
+    "X": 295,
+    "Y": 46,
+    "Width": 45,
+    "Height": 45,
+    "Layout": "hud_minimap"
+  },
+  {
+    "Key": "/Hud/Panel#0/gameplay_hud/Panel#16/minimap_persp/minimap_container/HudMinimapContainer/hud_minimap/Panel#49",
+    "Classes": "map_button active boss boss_buildingzip friend team2",
+    "Visible": true,
+    "X": 224,
+    "Y": 46,
+    "Width": 45,
+    "Height": 45,
+    "Layout": "hud_minimap"
+  },
+  {
+    "Key": "/Hud/Panel#0/gameplay_hud/Panel#16/minimap_persp/minimap_container/HudMinimapContainer/hud_minimap/Panel#5",
+    "Classes": "map_button active enemy player team1",
+    "Visible": true,
+    "X": 237,
+    "Y": 264,
+    "Width": 35,
+    "Height": 35,
+    "Layout": "hud_minimap"
+  },
+  {
+    "Key": "/Hud/Panel#0/gameplay_hud/Panel#16/minimap_persp/minimap_container/HudMinimapContainer/hud_minimap/Panel#50",
+    "Classes": "map_button boss boss_barracks_icon purpleLane",
+    "Visible": true,
+    "X": null,
+    "Y": null,
+    "Width": 0,
+    "Height": 0,
+    "Layout": "hud_minimap"
+  },
+  {
+    "Key": "/Hud/Panel#0/gameplay_hud/Panel#16/minimap_persp/minimap_container/HudMinimapContainer/hud_minimap/Panel#51",
+    "Classes": "map_button active boss boss_barracks_icon friend purpleLane team2",
+    "Visible": true,
+    "X": 307,
+    "Y": 72,
+    "Width": 56,
+    "Height": 56,
+    "Layout": "hud_minimap"
+  },
+  {
+    "Key": "/Hud/Panel#0/gameplay_hud/Panel#16/minimap_persp/minimap_container/HudMinimapContainer/hud_minimap/Panel#52",
+    "Classes": "map_button active boss boss_buildingzip enemy team1",
+    "Visible": true,
+    "X": 162,
+    "Y": 417,
+    "Width": 45,
+    "Height": 45,
+    "Layout": "hud_minimap"
+  },
+  {
+    "Key": "/Hud/Panel#0/gameplay_hud/Panel#16/minimap_persp/minimap_container/HudMinimapContainer/hud_minimap/Panel#53",
+    "Classes": "map_button active friend team2 tier1_shop",
+    "Visible": true,
+    "X": 205,
+    "Y": 199,
+    "Width": 50,
+    "Height": 50,
+    "Layout": "hud_minimap"
+  },
+  {
+    "Key": "/Hud/Panel#0/gameplay_hud/Panel#16/minimap_persp/minimap_container/HudMinimapContainer/hud_minimap/Panel#54",
+    "Classes": "map_button tier1_shop",
+    "Visible": true,
+    "X": null,
+    "Y": null,
+    "Width": 0,
+    "Height": 0,
+    "Layout": "hud_minimap"
+  },
+  {
+    "Key": "/Hud/Panel#0/gameplay_hud/Panel#16/minimap_persp/minimap_container/HudMinimapContainer/hud_minimap/Panel#55",
+    "Classes": "map_button active teleporter_far",
+    "Visible": true,
+    "X": 151,
+    "Y": 200,
+    "Width": 22,
+    "Height": 22,
+    "Layout": "hud_minimap"
+  },
+  {
+    "Key": "/Hud/Panel#0/gameplay_hud/Panel#16/minimap_persp/minimap_container/HudMinimapContainer/hud_minimap/Panel#56",
+    "Classes": "map_button active teleporter_far teleporter_onRight",
+    "Visible": true,
+    "X": 334,
+    "Y": 284,
+    "Width": 22,
+    "Height": 22,
+    "Layout": "hud_minimap"
+  },
+  {
+    "Key": "/Hud/Panel#0/gameplay_hud/Panel#16/minimap_persp/minimap_container/HudMinimapContainer/hud_minimap/Panel#57",
+    "Classes": "map_button active friend team2 tier1_shop",
+    "Visible": true,
+    "X": 448,
+    "Y": 186,
+    "Width": 50,
+    "Height": 50,
+    "Layout": "hud_minimap"
+  },
+  {
+    "Key": "/Hud/Panel#0/gameplay_hud/Panel#16/minimap_persp/minimap_container/HudMinimapContainer/hud_minimap/Panel#58",
+    "Classes": "map_button active friend team2 tier1_shop",
+    "Visible": true,
+    "X": 95,
+    "Y": 184,
+    "Width": 50,
+    "Height": 50,
+    "Layout": "hud_minimap"
+  },
+  {
+    "Key": "/Hud/Panel#0/gameplay_hud/Panel#16/minimap_persp/minimap_container/HudMinimapContainer/hud_minimap/Panel#59",
+    "Classes": "map_button tier1_shop",
+    "Visible": true,
+    "X": null,
+    "Y": null,
+    "Width": 0,
+    "Height": 0,
+    "Layout": "hud_minimap"
+  },
+  {
+    "Key": "/Hud/Panel#0/gameplay_hud/Panel#16/minimap_persp/minimap_container/HudMinimapContainer/hud_minimap/Panel#6",
+    "Classes": "map_button active enemy player team1",
+    "Visible": true,
+    "X": 61,
+    "Y": 236,
+    "Width": 29,
+    "Height": 29,
+    "Layout": "hud_minimap"
+  },
+  {
+    "Key": "/Hud/Panel#0/gameplay_hud/Panel#16/minimap_persp/minimap_container/HudMinimapContainer/hud_minimap/Panel#60",
+    "Classes": "map_button tier1_shop",
+    "Visible": true,
+    "X": null,
+    "Y": null,
+    "Width": 0,
+    "Height": 0,
+    "Layout": "hud_minimap"
+  },
+  {
+    "Key": "/Hud/Panel#0/gameplay_hud/Panel#16/minimap_persp/minimap_container/HudMinimapContainer/hud_minimap/Panel#61",
+    "Classes": "map_button active teleporter_far",
+    "Visible": true,
+    "X": 158,
+    "Y": 307,
+    "Width": 22,
+    "Height": 22,
+    "Layout": "hud_minimap"
+  },
+  {
+    "Key": "/Hud/Panel#0/gameplay_hud/Panel#16/minimap_persp/minimap_container/HudMinimapContainer/hud_minimap/Panel#62",
+    "Classes": "map_button active teleporter_far teleporter_onRight",
+    "Visible": true,
+    "X": 326,
+    "Y": 177,
+    "Width": 22,
+    "Height": 22,
+    "Layout": "hud_minimap"
+  },
+  {
+    "Key": "/Hud/Panel#0/gameplay_hud/Panel#16/minimap_persp/minimap_container/HudMinimapContainer/hud_minimap/Panel#63",
+    "Classes": "map_button active tier1_shop",
+    "Visible": true,
+    "X": 318,
+    "Y": 255,
+    "Width": 50,
+    "Height": 50,
+    "Layout": "hud_minimap"
+  },
+  {
+    "Key": "/Hud/Panel#0/gameplay_hud/Panel#16/minimap_persp/minimap_container/HudMinimapContainer/hud_minimap/Panel#64",
+    "Classes": "map_button active tier1_shop",
+    "Visible": true,
+    "X": 136,
+    "Y": 203,
+    "Width": 50,
+    "Height": 50,
+    "Layout": "hud_minimap"
+  },
+  {
+    "Key": "/Hud/Panel#0/gameplay_hud/Panel#16/minimap_persp/minimap_container/HudMinimapContainer/hud_minimap/Panel#65",
+    "Classes": "map_button active mid_boss midboss_spawned",
+    "Visible": true,
+    "X": 207,
+    "Y": 209,
+    "Width": 90,
+    "Height": 90,
+    "Layout": "hud_minimap"
+  },
+  {
+    "Key": "/Hud/Panel#0/gameplay_hud/Panel#16/minimap_persp/minimap_container/HudMinimapContainer/hud_minimap/Panel#66",
+    "Classes": "map_button active boss boss_icon_t1 enemy team1 yellowLane",
+    "Visible": true,
+    "X": 32,
+    "Y": 269,
+    "Width": 56,
+    "Height": 56,
+    "Layout": "hud_minimap"
+  },
+  {
+    "Key": "/Hud/Panel#0/gameplay_hud/Panel#16/minimap_persp/minimap_container/HudMinimapContainer/hud_minimap/Panel#67",
+    "Classes": "map_button active boss boss_icon_t1 enemy purpleLane team1",
+    "Visible": true,
+    "X": 388,
+    "Y": 273,
+    "Width": 56,
+    "Height": 56,
+    "Layout": "hud_minimap"
+  },
+  {
+    "Key": "/Hud/Panel#0/gameplay_hud/Panel#16/minimap_persp/minimap_container/HudMinimapContainer/hud_minimap/Panel#68",
+    "Classes": "map_button active boss boss_icon_t1 friend purpleLane team2",
+    "Visible": true,
+    "X": 414,
+    "Y": 183,
+    "Width": 56,
+    "Height": 56,
+    "Layout": "hud_minimap"
+  },
+  {
+    "Key": "/Hud/Panel#0/gameplay_hud/Panel#16/minimap_persp/minimap_container/HudMinimapContainer/hud_minimap/Panel#69",
+    "Classes": "map_button active boss boss_icon_t1 friend team2 yellowLane",
+    "Visible": true,
+    "X": 60,
+    "Y": 179,
+    "Width": 56,
+    "Height": 56,
+    "Layout": "hud_minimap"
+  },
+  {
+    "Key": "/Hud/Panel#0/gameplay_hud/Panel#16/minimap_persp/minimap_container/HudMinimapContainer/hud_minimap/Panel#7",
+    "Classes": "map_button enemy player team1",
+    "Visible": true,
+    "X": 43,
+    "Y": 253,
+    "Width": 35,
+    "Height": 35,
+    "Layout": "hud_minimap"
+  },
+  {
+    "Key": "/Hud/Panel#0/gameplay_hud/Panel#16/minimap_persp/minimap_container/HudMinimapContainer/hud_minimap/Panel#70",
+    "Classes": "map_button active blueLane boss boss_icon_t1 enemy team1",
+    "Visible": true,
+    "X": 224,
+    "Y": 267,
+    "Width": 56,
+    "Height": 56,
+    "Layout": "hud_minimap"
+  },
+  {
+    "Key": "/Hud/Panel#0/gameplay_hud/Panel#16/minimap_persp/minimap_container/HudMinimapContainer/hud_minimap/Panel#71",
+    "Classes": "map_button active blueLane boss boss_icon_t1 friend team2",
+    "Visible": true,
+    "X": 224,
+    "Y": 184,
+    "Width": 56,
+    "Height": 56,
+    "Layout": "hud_minimap"
+  },
+  {
+    "Key": "/Hud/Panel#0/gameplay_hud/Panel#16/minimap_persp/minimap_container/HudMinimapContainer/hud_minimap/Panel#72",
+    "Classes": "map_button active friend gold_spawn team2",
+    "Visible": true,
+    "X": 432,
+    "Y": 221,
+    "Width": 22,
+    "Height": 22,
+    "Layout": "hud_minimap"
+  },
+  {
+    "Key": "/Hud/Panel#0/gameplay_hud/Panel#16/minimap_persp/minimap_container/HudMinimapContainer/hud_minimap/Panel#8",
+    "Classes": "map_button enemy player team1",
+    "Visible": true,
+    "X": 225,
+    "Y": 291,
+    "Width": 35,
+    "Height": 35,
+    "Layout": "hud_minimap"
+  },
+  {
+    "Key": "/Hud/Panel#0/gameplay_hud/Panel#16/minimap_persp/minimap_container/HudMinimapContainer/hud_minimap/Panel#9",
+    "Classes": "map_button active enemy player team1",
+    "Visible": true,
+    "X": 420,
+    "Y": 208,
+    "Width": 35,
+    "Height": 35,
+    "Layout": "hud_minimap"
+  }
+]
