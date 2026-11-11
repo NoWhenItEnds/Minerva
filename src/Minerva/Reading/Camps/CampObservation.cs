@@ -1,6 +1,6 @@
 using System.Numerics;
 
-namespace Minerva.Match.Camps;
+namespace Minerva.Reading.Camps;
 
 /// <summary>What the camp tracker needs from one hero in one update.</summary>
 /// <param name="Slot">Player slot: identifies the hero across updates.</param>

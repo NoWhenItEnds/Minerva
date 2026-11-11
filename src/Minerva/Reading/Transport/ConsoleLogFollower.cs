@@ -2,7 +2,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace Minerva.Hud;
+namespace Minerva.Reading.Transport;
 
 /// <param name="Channel">Console channel, e.g. <c>PanoramaScript</c>; null for lines without one.</param>
 /// <param name="ReadUtc">When the companion read the line (for latency measurement).</param>

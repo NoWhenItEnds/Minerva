@@ -1,11 +1,11 @@
 using System.Globalization;
 using System.Text.RegularExpressions;
-using Minerva.GameState.StaticData;
-using Minerva.Hud;
-using Minerva.Match.Bindings;
-using V = Minerva.Match.Hud.HudVocabulary;
+using Minerva.GameData;
+using Minerva.Reading.Transport;
+using Minerva.Reading.Hud;
+using V = Minerva.Reading.Hud.HudVocabulary;
 
-namespace Minerva.Match.Hud;
+namespace Minerva.Reading.Hud;
 
 /// <summary>One hero's row in the top bar.</summary>
 /// <param name="Team">
@@ -59,7 +59,7 @@ public sealed partial class HudReader
     private readonly Dictionary<string, HeroInfo> _heroesByName;
     private readonly IReadOnlyList<string> _vocabularyWarnings;
 
-    public HudReader(LayoutCatalog catalog, GameData data)
+    public HudReader(LayoutCatalog catalog, GameCatalog data)
     {
         _catalog = catalog;
         _heroesByName = new Dictionary<string, HeroInfo>(StringComparer.OrdinalIgnoreCase);

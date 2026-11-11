@@ -1,6 +1,6 @@
 using ValveKeyValue;
 
-namespace Minerva.Source2.Kv3;
+namespace Minerva.Mod.Formats;
 
 /// <summary>
 /// An ordered KeyValues3 object. Values are <c>null</c>, <see cref="bool"/>, integers, <see cref="double"/>,

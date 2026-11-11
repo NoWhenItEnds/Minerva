@@ -1,14 +1,13 @@
 using System.Numerics;
-using Minerva.GameState.StaticData;
-using Minerva.Hud;
-using Minerva.Match;
-using Minerva.Match.Bindings;
-using Minerva.Match.Camps;
-using Minerva.Match.Hud;
-using Minerva.Match.Minimap;
-using Minerva.Match.Timeline;
+using Minerva.GameData;
+using Minerva.Reading.Transport;
+using Minerva.Reading;
+using Minerva.Reading.Hud;
+using Minerva.Reading.Camps;
+using Minerva.Reading.Minimap;
+using Minerva.Reading.Timeline;
 
-namespace Minerva.Tests;
+namespace Minerva.Tests.Reading;
 
 public class TimelineTests
 {
@@ -54,7 +53,7 @@ public class TimelineTests
             ($"{e}/TextContainer/VictimContainer/Panel#1", "Panel", null, null, false),
             ($"{e}/TextContainer/VictimContainer/Label#2", "Label", "KELVIN", null, true));
 
-        var entry = Assert.Single(new HudReader(catalog, GameData.Empty).Read(panels).Feed);
+        var entry = Assert.Single(new HudReader(catalog, GameCatalog.Empty).Read(panels).Feed);
 
         Assert.Equal("KHEPRI", entry.Killer);
         Assert.Equal("KELVIN", entry.Victim);

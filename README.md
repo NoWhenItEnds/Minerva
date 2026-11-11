@@ -2,7 +2,8 @@
 
 A real-time advisor for Deadlock. It reads the match state the player can see and suggests what to do next.
 
-**Status: step 1, validating that live game state can be read.**
+**Status: the game state is read live (HUD values, hero positions, kills, camps). Next: the advisor, starting with
+item recommendations.**
 
 ## How it reads the game
 
@@ -10,63 +11,83 @@ A real-time advisor for Deadlock. It reads the match state the player can see an
 |---|---|
 | Valve/community web APIs, broadcast stream | 60–90 s delay. Too slow. |
 | Game State Integration (as in CS2/Dota 2) | Not in Deadlock: no GSI code in `client.dll` or `engine2.dll`. |
-| Client POV demo (`record` + `demo_flush`) | `record` is flagged `cheat`, so it doesn't work in matchmaking. Kept for offline replay analysis. |
+| Client POV demo (`record` + `demo_flush`) | `record` is flagged `cheat`, so it doesn't work in matchmaking. Not used. |
 | Reading game memory / injecting | Risks bans. Not used. |
 | **Panorama HUD mod + `console.log`** | **Chosen.** A UI addon like other Deadlock HUD mods. It reads only the HUD's own panel tree (what the game already draws) and prints it to the console. With `-condebug` the game mirrors the console to `game/citadel/console.log`, which the companion follows. |
 
 Ban risk comes from policy, not detection. Valve hasn't published a Deadlock mod policy, and a real-time advisor gives
 an advantage by design. The mod is read-only: no input, no commands, no network, no memory access.
 
-## Architecture: built to survive patches
+## Architecture
+
+Three layers on a foundation of game data, in one library; an app on top.
+
+```
+src/
+  Minerva/              the library, one folder per layer
+    GameData/           what the game files say: install, heroes, items, map (camps, lanes, objectives), layouts
+    Mod/                the in-game addon: script, builder, installer; Formats/ writes Source 2 files
+    Reading/            what the HUD shows now
+      Transport/        console.log → the mod's messages → the mirrored HUD panel tree
+      Hud/              panels matched to the game's layout files; HUD values and the kill feed
+      Minimap/          hero and objective icons, calibrated to world coordinates
+      Camps/            camp state, inferred (camps have no icons)
+      Timeline/         the match over time: events, K/D/A, last-seen positions
+    Advisor/            what to do about it (next)
+  Minerva.App/          the executable: development commands now, the companion window later
+  Minerva.Tests/        tests in the same folders; Fixtures/ holds recordings from real matches (no player names)
+```
+
+Layers only depend downward (GameData ← Mod, Reading ← Advisor ← App), and the advisor only sees the reading layer's
+results, never its panels. `ArchitectureTests` checks this, since one project doesn't make the compiler enforce it.
 
 Deadlock patches constantly, so nothing patch-specific is hand-maintained:
 
-| Component | What it does | When Deadlock patches |
+| Part | What it does | When Deadlock patches |
 |---|---|---|
-| `Minerva.Source2` | Source 2 formats: binary KV3 writer, resource container, Panorama compiling. No Valve tools needed. | Unaffected unless Valve changes file formats |
-| `Minerva.Mod` | Builds the addon **from the installed game's own files**: reads the current `base_hud.vxml_c`, adds one `<scripts>` include, re-encodes it, and packs it with the script into `addons/pak90_dir.vpk`. A manifest records the game build and host-layout CRC. | `probe mod status` reports the addon as stale; `probe mod install` regenerates it |
-| `Minerva.Mod/Panorama/minerva.js` | In-game script. **Generic**: walks the whole HUD panel tree and logs changes, with no Deadlock panel IDs hardcoded. | Unaffected; HUD changes only change what the companion sees |
-| `Minerva.Mod/ClassProbes.cs` | Panorama can't list a panel's classes, only test one (`BHasClass`). For layouts whose panels carry meaning in classes (the minimap: hero/camp/boss, enemy, dead, camp up), the builder reads the layout's stylesheets from the game files and writes the class list into the script. | The class list is regenerated; only a renamed layout needs a code change (reported as a warning) |
-| `Minerva.Hud` | Follows `console.log`, reassembles the mod's messages, mirrors the HUD tree. | Unaffected |
-| `Minerva.GameState` | Static game data read from the game's packages: heroes and items (`GameData`), and the map's camps (position, type, first spawn, respawn, tether, the units each spawns and their soul rewards), lane paths and team objectives (`MapData`, from the map's entity lump plus `scripts/misc.vdata` and `scripts/npc_units.vdata`). Also demo parsing for offline analysis. | Data is re-read from game files automatically |
-| `Minerva.Match` | Interpretation: HUD tree + static data → match state. `Bindings/` matches every live panel to its node in its layout file (`LayoutCatalog` reads the game's layouts) by id, then type and position, so a label is known by its dialog variable (`{i:kills}` in `citadel_hud_top_bar_player`) instead of a panel path. `Hud/` reads named values that way (all names in `HudVocabulary`, checked against the installed layouts at start). `MatchReader` joins top bar rows with minimap icons by player slot order. `Minimap/` reads hero and objective icons by their classes (all Deadlock class names in `MinimapVocabulary`) and calibrates minimap ↔ world per match by fitting the walker/patron/barracks icons to the same objectives in `MapData`, which also tells which minimap team is which game team. `Camps/` infers camp state over time (camps have no HUD icons): spawn and respawn timers from `MapData`, clears from the local player's exact soul gains matching a nearby camp's unit rewards, and from other heroes' net worth jumps while at a camp away from lanes. `Hud/` also reads the kill feed; `MatchReader` ties its names to heroes. `Timeline/` (`MatchTimeline`) is the match over time, fed each read: kill, death, respawn, objective and camp events, each hero's K/D/A (from the feed) and last-seen position. The advisor reads from it. Reports what it expected but didn't find. | Class renames: one line in `MinimapVocabulary`, flagged by a warning; transform and team mapping are refitted every match; camp timings and rewards are re-read from game files |
-| `Minerva.Probe` | Development CLI. | — |
+| `GameData/` | Heroes and items (`GameCatalog`), the map's camps (position, timings, units and their soul rewards), lane paths and objectives (`MapData`, from the map's entity lump and `scripts/*.vdata`), and every HUD layout file (`LayoutCatalog`). | Re-read from the game files at start |
+| `Mod/` | Builds the addon **from the installed game's own files**: reads the current `base_hud.vxml_c`, adds one `<scripts>` include, re-encodes it, and packs it with the script into `addons/pak90_dir.vpk`. A manifest records the game build, host-layout CRC and script hash. `Formats/` writes binary KV3, resource containers and compiled Panorama, so no Valve tools are needed. | `mod status` reports the addon as stale; `mod install` regenerates it |
+| `Mod/minerva.js` | The in-game script. **Generic**: walks the whole HUD panel tree and logs changes, with no Deadlock panel ids hardcoded. Panorama can't list a panel's classes, only test one, so for layouts whose panels carry meaning in classes (the minimap) the builder reads the layout's stylesheets and writes the class list into the script (`ClassProbes`). | Unaffected; the class list is regenerated |
+| `Reading/Transport/` | Follows `console.log`, reassembles the mod's messages, mirrors the HUD tree. | Unaffected |
+| `Reading/Hud/` | Matches every live panel to its node in its layout file by id, then type and position, so a label is known by its dialog variable (`{i:kills}` in `citadel_hud_top_bar_player`) instead of a panel path. Reads named values and the kill feed that way; all names it relies on are in `HudVocabulary`, checked against the installed layouts at start. | A renamed variable or element is reported at start |
+| `Reading/Minimap/` | Reads hero and objective icons by their classes (`MinimapVocabulary`) and calibrates minimap ↔ world per match by fitting the walker/patron/barracks icons to the same objectives in `MapData`, which also tells which minimap team is which game team. | Transform and team mapping are refitted every match |
+| `Reading/MatchReader` | Joins top bar rows with minimap icons by player slot order, and ties kill feed names to heroes. | — |
+| `Reading/Camps/` | Camp state over time: spawn and respawn timers from `MapData`; clears from the local player's exact soul gains matching a nearby camp's unit rewards, and from other heroes' net worth jumps at a camp away from lanes. | Timings and rewards are re-read from the game files |
+| `Reading/Timeline/` | The match over time, fed each read: kill, death, respawn, objective and camp events, each hero's K/D/A (from the feed) and last-seen position. The advisor reads from it. | — |
 
-The interpretation layer follows the same rule: panels are identified through the game's own layout files and
-stylesheets, and camp, objective and lane data come from the map and vdata files, so a patch changes data rather than
-code. The few names the readers rely on are listed in one vocabulary file each and checked against the installed game.
-
-## Trying it (step 1)
+## Trying it
 
 Requirements: .NET 10 SDK; Deadlock launch option `-condebug`; `citadel/addons` mounted in `gameinfo.gi`
 (Deadlock Mod Manager does this).
 
 ```
 dotnet build -c Release
-alias probe="dotnet src/Minerva.Probe/bin/Release/net10.0/probe.dll"
+alias minerva="dotnet src/Minerva.App/bin/Release/net10.0/Minerva.App.dll"
 
-probe mod install          # build from current game files, install to addons/pak90_dir.vpk
-probe hud watch            # follow console.log
+minerva mod install        # build from current game files, install to addons/pak90_dir.vpk
+minerva watch              # follow console.log
 ```
 
-Start Deadlock and open a **bot match**. `hud watch` should print `[hello]` when the HUD loads, then `[full]`/`[delta]`
-lines every second with the mod→companion latency. The latest tree is written to `out/hud_tree.json`. Remove the addon
-with `probe mod uninstall`.
+Start Deadlock and open a **bot match**. `watch` prints `[hello]` when the HUD loads, then a line per update with the
+mod→companion latency, and match events as they're inferred (`[event] 2:15  kill  Haze killed Billy (514 souls)`,
+`[event] 3:31  camp  park_club_camp: cleared by you`). The latest tree is written to `out/hud_tree.json`. Remove the
+addon with `minerva mod uninstall`.
 
-Then `probe map` prints the map's camps and objectives from the game files, `probe minimap` reads heroes and
-objectives from `out/hud_tree.json` and places them in world coordinates (with each hero's nearest camp), and
-`probe state` prints the whole match state: clock, souls, and each hero's row joined with their map position.
-`hud watch` also prints match events as they're inferred (`[event] 3:31  camp  park_club_camp: cleared by you`,
-`[event] 2:15  kill  Haze killed Billy (514 souls)`), and `probe timeline --log <console.log>` replays a saved session's
-log through the timeline and prints every event, each hero's K/D/A and last-seen position, and every camp's state.
+`minerva replay --log <console.log>` replays a saved session through the timeline: every event, then each hero's K/D/A
+and last-seen position, and every camp's state. `console.log` is rewritten at each launch, so copy it to keep a match.
+`minerva map`, `gamedata` and `vpk` inspect the game files; `minerva minimap` and `state` read a tree dump. `minerva`
+alone lists every command.
 
 ## Tests
 
-`dotnet test --project tests/Minerva.Tests -c Release`:
+`dotnet test --project src/Minerva.Tests -c Release`. Besides unit tests for each part:
 - re-encoding the game's real `base_hud` layout is lossless, and the override keeps every original panel;
-- compiled scripts read back as valid `PanoramaScript` resources;
 - the real `minerva.js` runs under a JS interpreter against a fake Panorama API, and its console output rebuilds the
-  same tree in the companion (full dumps, deltas, removals, chunking, non-ASCII text, script reloads).
+  same tree in the companion (full dumps, deltas, removals, chunking, non-ASCII text, script reloads);
+- recorded matches (`Fixtures/`) read completely through the installed game's layouts, and replay to the camp clears
+  that happened;
+- the names the readers rely on still exist in the installed game (fails right after a patch that renamed one);
+- each layer uses only the layers below it.
 
 Tests that need the game skip themselves if Deadlock isn't installed (or set `DEADLOCK_DIR`).
 
@@ -96,7 +117,7 @@ Tests that need the game skip themselves if Deadlock isn't installed (or set `DE
 - Minimap icons are snippets from `hud_minimap` (`MinimapPlayerSnippet`, `MinimapBossSnippet`, ...); what an icon is
   and its state are only style classes (`.map_button.neutral.neutral_large.active` = a large camp that is up,
   `.map_button.player.enemy.PlayerDead`, ...). Protocol 4 reads each panel's layout file and, for minimap icons, the
-  probed classes; `hud watch` writes them to `out/minimap.json`. It also dumps the member names of Panorama's globals
+  probed classes; `watch` writes them to `out/minimap.json`. It also dumps the member names of Panorama's globals
   and of each panel type to `out/hud_api.json`, to see what this build exposes beyond the documented Dota API.
 
 - Third bot match (protocol 4, 2026-11-10): updates every 1.2–1.5 s with no long gap after complete walks; worst frame
@@ -193,10 +214,7 @@ Tests that need the game skip themselves if Deadlock isn't installed (or set `DE
 
 ## Open questions
 
-- Camp clears by others are inferred, not seen: are neutral souls shared with nearby allies (which would break exact
-  matching when clearing together)? Does net-worth inference produce false clears in longer matches?
+- Camp clears by others are inferred, not seen: does net-worth inference produce false clears in longer matches?
 - Is the mod acceptable in matchmaking? Only tested in bot matches so far.
-- Offline demo parsing: DemoFile.Net 0.44.1 can't read current demos (`CitadelAbilityUpgradeInfoPacked_t`) and
-  needs a one-line fork fix. Low priority now that demos aren't the live source.
 
 Credits: Panorama/KV3/resource writing follows [modlock](https://github.com/paralin/modlock) (MIT).

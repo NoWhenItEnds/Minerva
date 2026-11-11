@@ -1,6 +1,6 @@
-using Minerva.Source2.Kv3;
+using Minerva.Mod.Formats;
 
-namespace Minerva.Source2.Panorama;
+namespace Minerva.Mod.Formats;
 
 /// <summary>
 /// Edits a compiled Panorama layout tree (<c>{ m_AST: { m_pRoot: node } }</c>). Nodes have an <c>eType</c>

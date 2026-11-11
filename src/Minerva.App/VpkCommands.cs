@@ -4,7 +4,7 @@ using SteamDatabase.ValvePak;
 using ValveResourceFormat;
 using ValveResourceFormat.ResourceTypes;
 
-namespace Minerva.Probe;
+namespace Minerva.App;
 
 /// <summary>Explore game / addon VPKs: list entries and decompile compiled resources to text.</summary>
 internal static class VpkCommands

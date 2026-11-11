@@ -1,7 +1,7 @@
 using Minerva.Mod;
-using Minerva.Source2.Panorama;
+using Minerva.Mod.Formats;
 
-namespace Minerva.Tests;
+namespace Minerva.Tests.Mod;
 
 public class ClassProbeTests
 {

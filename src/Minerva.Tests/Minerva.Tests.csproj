@@ -1,4 +1,6 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Folders mirror the library's layers. Fixtures/ holds recordings from real matches (no player names). -->
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
@@ -28,10 +30,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Minerva.Source2\Minerva.Source2.csproj" />
-    <ProjectReference Include="..\..\src\Minerva.Mod\Minerva.Mod.csproj" />
-    <ProjectReference Include="..\..\src\Minerva.Hud\Minerva.Hud.csproj" />
-    <ProjectReference Include="..\..\src\Minerva.Match\Minerva.Match.csproj" />
+    <ProjectReference Include="..\Minerva\Minerva.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,9 +1,9 @@
 using System.Numerics;
-using Minerva.GameState.StaticData;
-using Minerva.Hud;
-using V = Minerva.Match.Minimap.MinimapVocabulary;
+using Minerva.GameData;
+using Minerva.Reading.Transport;
+using V = Minerva.Reading.Minimap.MinimapVocabulary;
 
-namespace Minerva.Match.Minimap;
+namespace Minerva.Reading.Minimap;
 
 /// <summary>
 /// Reads heroes and objectives from the minimap icons the mod reports (panels from the <c>hud_minimap</c> layout with

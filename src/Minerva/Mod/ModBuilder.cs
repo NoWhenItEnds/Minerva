@@ -2,9 +2,8 @@ using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
-using Minerva.GameState.Live;
-using Minerva.Source2;
-using Minerva.Source2.Panorama;
+using Minerva.GameData;
+using Minerva.Mod.Formats;
 using SteamDatabase.ValvePak;
 
 namespace Minerva.Mod;
@@ -50,7 +49,7 @@ public static class ModBuilder
     {
         get
         {
-            using var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("Minerva.Mod.Panorama.minerva.js")
+            using var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("Minerva.Mod.minerva.js")
                                ?? throw new InvalidOperationException("Embedded mod script missing.");
             return new StreamReader(stream, Encoding.UTF8).ReadToEnd();
         }

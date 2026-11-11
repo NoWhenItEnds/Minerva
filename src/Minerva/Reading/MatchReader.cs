@@ -1,11 +1,10 @@
 using System.Numerics;
-using Minerva.GameState.StaticData;
-using Minerva.Hud;
-using Minerva.Match.Bindings;
-using Minerva.Match.Hud;
-using Minerva.Match.Minimap;
+using Minerva.GameData;
+using Minerva.Reading.Transport;
+using Minerva.Reading.Hud;
+using Minerva.Reading.Minimap;
 
-namespace Minerva.Match;
+namespace Minerva.Reading;
 
 /// <summary>Everything known about one hero: their top bar row joined with their minimap icon.</summary>
 /// <param name="Visible">Seen now (allies always; enemies when not in fog). False: <see cref="World"/> is last known.</param>
@@ -41,7 +40,7 @@ public sealed record MatchState(
 }
 
 /// <summary>Reads the whole match state from the mirrored HUD tree.</summary>
-public sealed class MatchReader(LayoutCatalog catalog, GameData data, MapData map)
+public sealed class MatchReader(LayoutCatalog catalog, GameCatalog data, MapData map)
 {
     private readonly HudReader _hud = new(catalog, data);
     private readonly MinimapReader _minimap = new(map);

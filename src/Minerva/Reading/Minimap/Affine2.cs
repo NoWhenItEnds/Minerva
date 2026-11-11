@@ -1,6 +1,6 @@
 using System.Numerics;
 
-namespace Minerva.Match.Minimap;
+namespace Minerva.Reading.Minimap;
 
 /// <summary>A 2D affine transform: <c>x' = A·x + B·y + C</c>, <c>y' = D·x + E·y + F</c>.</summary>
 public readonly record struct Affine2(double A, double B, double C, double D, double E, double F)

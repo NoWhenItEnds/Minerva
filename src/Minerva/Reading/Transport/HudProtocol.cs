@@ -1,7 +1,7 @@
 using System.Text;
 using System.Text.Json;
 
-namespace Minerva.Hud;
+namespace Minerva.Reading.Transport;
 
 /// <summary>A complete message from the in-game mod.</summary>
 /// <param name="Type"><c>hello</c>, <c>full</c>, <c>delta</c> or <c>error</c>.</param>

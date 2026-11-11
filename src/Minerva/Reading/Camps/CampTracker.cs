@@ -1,7 +1,7 @@
 using System.Numerics;
-using Minerva.GameState.StaticData;
+using Minerva.GameData;
 
-namespace Minerva.Match.Camps;
+namespace Minerva.Reading.Camps;
 
 public enum CampStatus
 {

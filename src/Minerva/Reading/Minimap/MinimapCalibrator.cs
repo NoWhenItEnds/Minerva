@@ -1,7 +1,7 @@
 using System.Numerics;
-using Minerva.GameState.StaticData;
+using Minerva.GameData;
 
-namespace Minerva.Match.Minimap;
+namespace Minerva.Reading.Minimap;
 
 /// <summary>A landmark icon: an objective whose world position the map's entity lump gives.</summary>
 /// <param name="MinimapTeam">The icon's <c>teamN</c> number.</param>

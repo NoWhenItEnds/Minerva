@@ -1,4 +1,4 @@
-namespace Minerva.Match.Hud;
+namespace Minerva.Reading.Hud;
 
 /// <summary>
 /// The layouts, dialog variables and element ids the HUD reader relies on, in one place. All of them are the game's

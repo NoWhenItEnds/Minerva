@@ -1,6 +1,6 @@
-using Minerva.GameState.StaticData;
+using Minerva.GameData;
 
-namespace Minerva.Tests;
+namespace Minerva.Tests.GameData;
 
 /// <summary>
 /// Map data read from the installed game. Asserts invariants (not exact values) so a balance patch that moves a camp

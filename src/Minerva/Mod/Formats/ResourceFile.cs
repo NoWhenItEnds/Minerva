@@ -1,7 +1,7 @@
 using System.Buffers.Binary;
 using System.Text;
 
-namespace Minerva.Source2.Resources;
+namespace Minerva.Mod.Formats;
 
 public sealed record ResourceBlock(string Tag, byte[] Data);
 

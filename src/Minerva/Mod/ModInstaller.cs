@@ -1,6 +1,6 @@
 using System.Diagnostics;
 using System.Text.RegularExpressions;
-using Minerva.GameState.Live;
+using Minerva.GameData;
 using SteamDatabase.ValvePak;
 
 namespace Minerva.Mod;

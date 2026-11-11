@@ -1,10 +1,10 @@
 using System.Diagnostics.CodeAnalysis;
 using Jint;
 using Jint.Native;
-using Minerva.Hud;
+using Minerva.Reading.Transport;
 using Minerva.Mod;
 
-namespace Minerva.Tests;
+namespace Minerva.Tests.Mod;
 
 /// <summary>
 /// Runs the real in-game script (minerva.js) under a JavaScript interpreter against a fake Panorama API, and feeds

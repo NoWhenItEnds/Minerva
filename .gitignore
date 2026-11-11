@@ -23,7 +23,5 @@ obj/
 .vs/
 *.csproj.bak
 
-# Local captures from the probe
-*.dem
-*.jsonl
+# Local output of `minerva watch` (HUD tree dumps)
 out/

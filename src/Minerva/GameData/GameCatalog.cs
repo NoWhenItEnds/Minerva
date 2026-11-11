@@ -1,8 +1,8 @@
 using System.Text.RegularExpressions;
-using Minerva.GameState.Live;
+using Minerva.GameData;
 using SteamDatabase.ValvePak;
 
-namespace Minerva.GameState.StaticData;
+namespace Minerva.GameData;
 
 public sealed record HeroInfo(int Id, string ClassName, string DisplayName);
 
@@ -18,12 +18,12 @@ public sealed record AbilityInfo(
 /// Static game definitions (heroes, items/abilities, display names) read straight from the installed game's VPK and
 /// localization files, so they always match the build being played. No network access.
 /// </summary>
-public sealed partial class GameData
+public sealed partial class GameCatalog
 {
     private readonly Dictionary<int, HeroInfo> _heroes;
     private readonly Dictionary<uint, AbilityInfo> _abilitiesByToken;
 
-    private GameData(Dictionary<int, HeroInfo> heroes, Dictionary<uint, AbilityInfo> abilities, int? build)
+    private GameCatalog(Dictionary<int, HeroInfo> heroes, Dictionary<uint, AbilityInfo> abilities, int? build)
     {
         _heroes = heroes;
         _abilitiesByToken = abilities;
@@ -36,7 +36,7 @@ public sealed partial class GameData
     public IReadOnlyCollection<HeroInfo> Heroes => _heroes.Values;
     public IReadOnlyCollection<AbilityInfo> Abilities => _abilitiesByToken.Values;
 
-    public static GameData Empty { get; } = new([], [], null);
+    public static GameCatalog Empty { get; } = new([], [], null);
 
     public HeroInfo? Hero(int heroId) => _heroes.GetValueOrDefault(heroId);
 
@@ -44,7 +44,7 @@ public sealed partial class GameData
 
     public AbilityInfo? Ability(uint token) => _abilitiesByToken.GetValueOrDefault(token);
 
-    public static GameData Load(DeadlockInstall install)
+    public static GameCatalog Load(DeadlockInstall install)
     {
         var heroNames = ReadLocalization(Path.Combine(install.LocalizationDir, "citadel_gc_hero_names", "citadel_gc_hero_names_english.txt"));
         var modNames = ReadLocalization(Path.Combine(install.LocalizationDir, "citadel_gc_mod_names", "citadel_gc_mod_names_english.txt"));
@@ -78,7 +78,7 @@ public sealed partial class GameData
             abilities[info.Token] = info;
         }
 
-        return new GameData(heroes, abilities, ReadBuild(install));
+        return new GameCatalog(heroes, abilities, ReadBuild(install));
     }
 
     private static Dictionary<string, string> ReadLocalization(string path)

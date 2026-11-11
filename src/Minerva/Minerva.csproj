@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The library, one folder per layer:
+      GameData/  what the game files say (install, heroes, items, map, layouts)
+      Mod/       the in-game addon (script, builder, installer) and the Source 2 formats it is built with
+      Reading/   what the HUD shows now: log -> panel tree -> readers -> trackers -> timeline
+      Advisor/   what to do about it
+    Layers only depend downward; ArchitectureTests checks it.
+  -->
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ValveResourceFormat" Version="20.1.7467" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Mod/minerva.js" LogicalName="Minerva.Mod.minerva.js" />
+  </ItemGroup>
+
+</Project>

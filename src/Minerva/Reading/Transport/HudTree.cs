@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace Minerva.Hud;
+namespace Minerva.Reading.Transport;
 
 /// <summary>One HUD panel as reported by the mod.</summary>
 /// <param name="Key">Id path from the top panel, e.g. <c>/Hud/Panel#0/TopBar/Panel#2/GameTime</c>.</param>

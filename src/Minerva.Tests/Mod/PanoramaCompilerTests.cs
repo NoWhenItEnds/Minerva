@@ -1,11 +1,10 @@
 using System.Text;
 using Minerva.Mod;
-using Minerva.Source2.Panorama;
-using Minerva.Source2.Resources;
+using Minerva.Mod.Formats;
 using ValveResourceFormat;
 using ValveResourceFormat.ResourceTypes;
 
-namespace Minerva.Tests;
+namespace Minerva.Tests.Mod;
 
 public class PanoramaCompilerTests
 {

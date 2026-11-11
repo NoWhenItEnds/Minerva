@@ -1,7 +1,7 @@
-using Minerva.GameState.StaticData;
-using Minerva.Hud;
+using Minerva.GameData;
+using Minerva.Reading.Transport;
 
-namespace Minerva.Match.Bindings;
+namespace Minerva.Reading.Hud;
 
 /// <summary>A live panel matched to the node of the layout file it was created from.</summary>
 /// <param name="InstanceKey">Key of the panel the layout was loaded into (e.g. one top bar player).</param>

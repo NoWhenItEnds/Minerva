@@ -1,10 +1,10 @@
 using System.Numerics;
 using System.Text.Json;
-using Minerva.GameState.StaticData;
-using Minerva.Hud;
-using Minerva.Match.Minimap;
+using Minerva.GameData;
+using Minerva.Reading.Transport;
+using Minerva.Reading.Minimap;
 
-namespace Minerva.Tests;
+namespace Minerva.Tests.Reading;
 
 public class MinimapTests
 {

@@ -1,4 +1,4 @@
-using Minerva.GameState.Live;
+using Minerva.GameData;
 
 namespace Minerva.Tests;
 

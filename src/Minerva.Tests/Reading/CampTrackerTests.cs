@@ -1,9 +1,9 @@
 using System.Numerics;
 using System.Text.Json;
-using Minerva.GameState.StaticData;
-using Minerva.Match.Camps;
+using Minerva.GameData;
+using Minerva.Reading.Camps;
 
-namespace Minerva.Tests;
+namespace Minerva.Tests.Reading;
 
 public class CampTrackerTests
 {

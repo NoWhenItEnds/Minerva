@@ -1,13 +1,13 @@
 using System.Globalization;
 using System.Numerics;
 using System.Text.RegularExpressions;
-using Minerva.GameState.Live;
+using Minerva.GameData;
 using SteamDatabase.ValvePak;
 using ValveKeyValue;
 using ValveResourceFormat;
 using ValveResourceFormat.ResourceTypes;
 
-namespace Minerva.GameState.StaticData;
+namespace Minerva.GameData;
 
 /// <summary>A neutral camp placed in the map.</summary>
 /// <param name="Name">The camp's name in the map (or a generated one when the map leaves it empty); unique per map.</param>

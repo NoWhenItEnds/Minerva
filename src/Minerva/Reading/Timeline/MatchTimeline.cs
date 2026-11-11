@@ -1,9 +1,9 @@
 using System.Numerics;
-using Minerva.GameState.StaticData;
-using Minerva.Match.Camps;
-using Minerva.Match.Minimap;
+using Minerva.GameData;
+using Minerva.Reading.Camps;
+using Minerva.Reading.Minimap;
 
-namespace Minerva.Match.Timeline;
+namespace Minerva.Reading.Timeline;
 
 /// <summary>Something that happened in the match, as inferred from successive HUD reads.</summary>
 public abstract record MatchEvent(TimeSpan Clock)

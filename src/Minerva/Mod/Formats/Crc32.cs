@@ -1,4 +1,4 @@
-namespace Minerva.Source2;
+namespace Minerva.Mod.Formats;
 
 /// <summary>CRC-32 (IEEE 802.3), as used in resource edit info.</summary>
 public static class Crc32

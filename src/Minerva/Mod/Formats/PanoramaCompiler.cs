@@ -1,10 +1,9 @@
 using System.Text;
-using Minerva.Source2.Kv3;
-using Minerva.Source2.Resources;
+using Minerva.Mod.Formats;
 using ValveResourceFormat;
 using ValveResourceFormat.ResourceTypes;
 
-namespace Minerva.Source2.Panorama;
+namespace Minerva.Mod.Formats;
 
 /// <summary>
 /// Produces compiled Panorama resources without Valve's resource compiler.

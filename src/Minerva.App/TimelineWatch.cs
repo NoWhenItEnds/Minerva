@@ -1,11 +1,10 @@
-using Minerva.GameState.Live;
-using Minerva.GameState.StaticData;
-using Minerva.Hud;
-using Minerva.Match;
-using Minerva.Match.Camps;
-using Minerva.Match.Timeline;
+using Minerva.GameData;
+using Minerva.Reading.Transport;
+using Minerva.Reading;
+using Minerva.Reading.Camps;
+using Minerva.Reading.Timeline;
 
-namespace Minerva.Probe;
+namespace Minerva.App;
 
 /// <summary>Runs the match reader and timeline over the mirrored HUD tree, for the probe's event output.</summary>
 internal sealed class TimelineWatch
@@ -15,7 +14,7 @@ internal sealed class TimelineWatch
     public TimelineWatch(DeadlockInstall install, string? map)
     {
         var mapData = MapData.Load(install, map ?? MapData.DefaultMap);
-        _reader = new MatchReader(LayoutCatalog.Load(install), GameData.Load(install), mapData);
+        _reader = new MatchReader(LayoutCatalog.Load(install), GameCatalog.Load(install), mapData);
         Timeline = new MatchTimeline(mapData);
     }
 

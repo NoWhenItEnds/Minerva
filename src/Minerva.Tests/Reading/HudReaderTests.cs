@@ -1,11 +1,10 @@
 using System.Text.Json;
-using Minerva.GameState.StaticData;
-using Minerva.Hud;
-using Minerva.Match;
-using Minerva.Match.Bindings;
-using Minerva.Match.Hud;
+using Minerva.GameData;
+using Minerva.Reading.Transport;
+using Minerva.Reading;
+using Minerva.Reading.Hud;
 
-namespace Minerva.Tests;
+namespace Minerva.Tests.Reading;
 
 public class HudReaderTests
 {
@@ -89,7 +88,7 @@ public class HudReaderTests
             ("/TopBar/TeamsContainer/TeamFriendly/TopBarPlayer3/Names", "Panel", null, null),
             ("/TopBar/TeamsContainer/TeamFriendly/TopBarPlayer3/Names/Label#1", "Label", "HAZE", null));
 
-        var state = new HudReader(catalog, GameData.Empty).Read(panels);
+        var state = new HudReader(catalog, GameCatalog.Empty).Read(panels);
 
         Assert.Equal(TimeSpan.FromSeconds(-23), state.Clock);
         var row = Assert.Single(state.Heroes);
@@ -116,7 +115,7 @@ public class HudReaderTests
             ("/Hud/StatsAndModsContainer/gold_and_ap_container/hudCurGoldLabel", "Label", "844", null));
         panels["/Hud/CitadelHudHeroShop"] = panels["/Hud/CitadelHudHeroShop"] with { Visible = false };
 
-        Assert.Equal(844, new HudReader(catalog, GameData.Empty).Read(panels).UnspentSouls);
+        Assert.Equal(844, new HudReader(catalog, GameCatalog.Empty).Read(panels).UnspentSouls);
     }
 
     [Theory]
@@ -148,7 +147,7 @@ public class HudReaderTests
         var panels = JsonSerializer.Deserialize<List<HudPanel>>(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "Fixtures", "hud_match_build6860.json")))!
             .ToDictionary(p => p.Key, StringComparer.Ordinal);
 
-        var state = new MatchReader(LayoutCatalog.Load(install), GameData.Load(install), MapData.Load(install)).Read(panels);
+        var state = new MatchReader(LayoutCatalog.Load(install), GameCatalog.Load(install), MapData.Load(install)).Read(panels);
 
         // If this fails right after a game patch, the HUD changed: re-record the fixture with `probe hud watch`.
         Assert.Empty(state.Warnings);

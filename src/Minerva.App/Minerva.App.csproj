@@ -1,19 +1,16 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
-  <ItemGroup>
-    <ProjectReference Include="..\Minerva.GameState\Minerva.GameState.csproj" />
-    <ProjectReference Include="..\Minerva.Mod\Minerva.Mod.csproj" />
-    <ProjectReference Include="..\Minerva.Hud\Minerva.Hud.csproj" />
-    <ProjectReference Include="..\Minerva.Source2\Minerva.Source2.csproj" />
-    <ProjectReference Include="..\Minerva.Match\Minerva.Match.csproj" />
-  </ItemGroup>
+  <!-- The one executable: the companion (to come) and the development commands (watch, replay, mod, inspect). -->
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <AssemblyName>probe</AssemblyName>
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Minerva\Minerva.csproj" />
+  </ItemGroup>
 
 </Project>

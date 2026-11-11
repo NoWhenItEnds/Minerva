@@ -1,6 +1,6 @@
 using System.Text;
 
-namespace Minerva.GameState.StaticData;
+namespace Minerva.GameData;
 
 /// <summary>
 /// Source 2 <c>CUtlStringToken</c>: MurmurHash2 (seed 0x31415926) of the lower-cased string.

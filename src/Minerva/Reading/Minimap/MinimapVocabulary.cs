@@ -1,4 +1,4 @@
-namespace Minerva.Match.Minimap;
+namespace Minerva.Reading.Minimap;
 
 /// <summary>
 /// The Deadlock style classes the minimap reader interprets, in one place. They come from the game's

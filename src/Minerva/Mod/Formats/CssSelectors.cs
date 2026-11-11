@@ -1,6 +1,6 @@
 using System.Text.RegularExpressions;
 
-namespace Minerva.Source2.Panorama;
+namespace Minerva.Mod.Formats;
 
 /// <summary>Reads the class names Panorama stylesheets select on.</summary>
 public static partial class CssSelectors

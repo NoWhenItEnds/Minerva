@@ -4,7 +4,7 @@ using ValveKeyValue;
 using ValveResourceFormat;
 using ValveResourceFormat.ResourceTypes;
 
-namespace Minerva.GameState.StaticData;
+namespace Minerva.GameData;
 
 /// <summary>Reads Valve data files (<c>*.vdata_c</c>, entity lumps) out of game packages.</summary>
 internal static class VData

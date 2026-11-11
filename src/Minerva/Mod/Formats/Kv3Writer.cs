@@ -1,7 +1,7 @@
 using System.Buffers.Binary;
 using System.Text;
 
-namespace Minerva.Source2.Kv3;
+namespace Minerva.Mod.Formats;
 
 /// <summary>
 /// Writes binary KeyValues3 version 5 (LZ4 "literals only" blocks), the form Valve's resource compiler writes for

@@ -1,6 +1,6 @@
 using System.Numerics;
 
-namespace Minerva.Match.Minimap;
+namespace Minerva.Reading.Minimap;
 
 /// <summary>A hero icon on the minimap.</summary>
 /// <param name="Key">HUD panel key (stable within a match; icons are reused before the match starts).</param>

@@ -1,11 +1,11 @@
 using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
-using Minerva.GameState.Live;
+using Minerva.GameData;
 using SteamDatabase.ValvePak;
 using ValveResourceFormat;
 
-namespace Minerva.GameState.StaticData;
+namespace Minerva.GameData;
 
 /// <summary>One element of a Panorama layout file.</summary>
 /// <param name="Type">Panel type (the element name), e.g. <c>Label</c>.</param>
