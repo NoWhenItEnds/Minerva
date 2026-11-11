@@ -18,6 +18,14 @@ public sealed record HeroState(
     public Vector2? World => Icon is { OnMap: true } i ? i.World : null;
 }
 
+/// <summary>A kill feed entry with its heroes identified.</summary>
+/// <param name="KillerSlot">The killer's player slot; null for an NPC (or a name that matched no row).</param>
+/// <param name="VictimSlot">The victim's slot; null for an objective.</param>
+public sealed record FeedKill(FeedEntry Entry, int? KillerSlot, int? VictimSlot, IReadOnlyList<int> AssistSlots)
+{
+    public bool Involves(int slot) => KillerSlot == slot || AssistSlots.Contains(slot);
+}
+
 /// <summary>The match as the local player's HUD shows it, at one moment.</summary>
 public sealed record MatchState(
     TimeSpan? Clock, int? LocalTeam, int? UnspentSouls,
@@ -25,6 +33,9 @@ public sealed record MatchState(
     HudState Hud, MinimapState Minimap, IReadOnlyList<string> Warnings)
 {
     public HeroState? LocalPlayer => Heroes.FirstOrDefault(h => h.IsLocalPlayer);
+
+    /// <summary>Kill feed entries on screen, with their heroes' slots.</summary>
+    public IReadOnlyList<FeedKill> Feed { get; init; } = [];
     public IEnumerable<HeroState> Allies => Heroes.Where(h => h.IsAlly);
     public IEnumerable<HeroState> Enemies => Heroes.Where(h => !h.IsAlly);
 }
@@ -55,7 +66,29 @@ public sealed class MatchReader(LayoutCatalog catalog, GameData data, MapData ma
                 row?.Hero, row?.HeroName, row, icon));
         }
 
-        return new MatchState(hud.Clock, localTeam, hud.UnspentSouls, heroes, minimap.Objectives, hud, minimap, warnings);
+        return new MatchState(hud.Clock, localTeam, hud.UnspentSouls, heroes, minimap.Objectives, hud, minimap, warnings)
+        {
+            Feed = hud.Feed.Select(e => Resolve(e, heroes)).ToList(),
+        };
+    }
+
+    /// <summary>
+    /// Ties a feed entry's names to heroes. The feed shows persona names: the top bar row's player name (a bot's is its
+    /// hero's name), compared ignoring case since the feed may differ in case. Names that match no hero are NPCs
+    /// (a guardian killing a hero, say). Assists come as hero ids.
+    /// </summary>
+    public static FeedKill Resolve(FeedEntry entry, IReadOnlyList<HeroState> heroes)
+    {
+        HeroState? ByName(string? name) =>
+            string.IsNullOrEmpty(name) ? null
+            : heroes.FirstOrDefault(h => string.Equals(h.Row?.PlayerName, name, StringComparison.OrdinalIgnoreCase))
+              ?? heroes.FirstOrDefault(h => string.Equals(h.HeroName, name, StringComparison.OrdinalIgnoreCase));
+        var killer = ByName(entry.Killer);
+        var victim = entry.VictimIsObjective ? null : ByName(entry.Victim);
+        var assists = entry.AssistHeroIds
+            .Select(id => heroes.FirstOrDefault(h => h.Hero?.Id == id)?.Slot)
+            .OfType<int>().ToList();
+        return new FeedKill(entry, killer?.Slot, victim?.Slot, assists);
     }
 
     /// <summary>

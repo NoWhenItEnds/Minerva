@@ -27,7 +27,7 @@ try
         "map" => MapCommand(),
         "minimap" => MinimapCommand(),
         "state" => StateCommand(),
-        "camps" => CampsCommand(),
+        "timeline" => TimelineCommand(),
         _ => Usage(),
     };
 }
@@ -64,10 +64,11 @@ int Usage()
           probe state [--tree out/hud_tree.json]
                                                Read named HUD values (clock, souls, each hero's row) from a HUD tree
                                                dump through the game's layout bindings.
-          probe camps [--log <console.log>] [--spawns true]
-                                               Replay a session's console.log through the camp tracker: which camps
-                                               were cleared, by whom, and when they respawn. (hud watch prints the same
-                                               camp events live.)
+          probe timeline [--log <console.log>] [--spawns true]
+                                               Replay a session's console.log through the match timeline: kills,
+                                               deaths, objectives and camp inferences as they happened, then each
+                                               hero's K/D/A and every camp's state. (hud watch prints the same events
+                                               live.)
 
         Demos (offline analysis; `record` is cheat-protected, so not live in matchmaking):
           probe census <demo.dem> [--at <s>]   List entity classes present at match clock <s> (default 600).
@@ -134,13 +135,13 @@ int StateCommand()
     return 0;
 }
 
-int CampsCommand()
+int TimelineCommand()
 {
-    // probe camps [--log <console.log>]: replay a session's log through the camp tracker.
+    // probe timeline [--log <console.log>]: replay a session's log through the match timeline.
     var log = cli.Option("log") ?? Path.Combine(Install().CitadelDir, "console.log");
     var protocol = new Minerva.Hud.HudProtocol();
     var tree = new Minerva.Hud.HudTree();
-    var watch = new CampWatch(Install(), cli.Option("map"));
+    var watch = new TimelineWatch(Install(), cli.Option("map"));
     foreach (var raw in File.ReadLines(log))
     {
         if (protocol.Accept(Minerva.Hud.ConsoleLogFollower.Parse(raw, DateTime.UtcNow)) is not { } msg) continue;
@@ -149,7 +150,9 @@ int CampsCommand()
             foreach (var e in watch.Update(tree, spawns: cli.Option("spawns") == "true")) Console.WriteLine(e);
     }
     Console.WriteLine();
-    watch.PrintTable();
+    watch.PrintHeroes();
+    Console.WriteLine();
+    watch.PrintCamps();
     return 0;
 }
 
@@ -364,7 +367,7 @@ async Task<int> HudCommand()
     var outDir = Path.GetDirectoryName(Path.GetFullPath(dump))!;
     var api = new SortedDictionary<string, JsonElement>(StringComparer.Ordinal); // "global" / "panel:<type>" -> members
     var apiDirty = false;
-    CampWatch? camps = null;
+    TimelineWatch? timeline = null;
 
     static double Num(JsonElement body, string name) => body.TryGetProperty(name, out var v) && v.ValueKind == JsonValueKind.Number ? v.GetDouble() : 0;
 
@@ -386,8 +389,8 @@ async Task<int> HudCommand()
 
         var changed = tree.Apply(msg);
         if (msg.Type is "full" or "delta" && tree.Complete)
-            foreach (var e in (camps ??= new CampWatch(Install(), cli.Option("map"))).Update(tree))
-                Console.WriteLine($"[camp ] {e}");
+            foreach (var e in (timeline ??= new TimelineWatch(Install(), cli.Option("map"))).Update(tree))
+                Console.WriteLine($"[event] {e}");
         var latency = msg.Latency.TotalMilliseconds;
         if (latency > 5000 && msg.Type is "full" or "delta")
         {

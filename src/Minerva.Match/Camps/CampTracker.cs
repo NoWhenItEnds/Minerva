@@ -136,7 +136,7 @@ public sealed class CampTracker
             .Select(h => h.World!.Value).ToList();
 
         // Gains first, while the visit they belong to is still open (souls can show a moment after the player moves on).
-        if (alive && observation.UnspentSouls is { } souls && _souls is { } before && souls > before)
+        if (alive && !observation.LocalGainFromKill && observation.UnspentSouls is { } souls && _souls is { } before && souls > before)
             Attribute(now, souls - before, position, _position, allies, events);
         _souls = observation.UnspentSouls ?? _souls;
         _position = position;

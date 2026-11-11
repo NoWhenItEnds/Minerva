@@ -10,7 +10,11 @@ public sealed record HeroSighting(int Slot, bool IsLocalPlayer, bool IsAlly, boo
 
 /// <summary>One update of the match, reduced to what the camp tracker uses.</summary>
 /// <param name="UnspentSouls">The local player's unspent souls (exact).</param>
-public sealed record CampObservation(TimeSpan Clock, int? UnspentSouls, IReadOnlyList<HeroSighting> Heroes)
+/// <param name="LocalGainFromKill">
+/// The kill feed shows a hero kill the local player made or assisted just now: this update's soul gain is (mostly) the
+/// kill's bounty, so it isn't matched to camps.
+/// </param>
+public sealed record CampObservation(TimeSpan Clock, int? UnspentSouls, IReadOnlyList<HeroSighting> Heroes, bool LocalGainFromKill = false)
 {
     private const int LocalSlot = -1;
 

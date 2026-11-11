@@ -40,6 +40,24 @@ public static class HudVocabulary
     public const string SoulsContainer = "hud_gold_and_ap_container";
     public const string UnspentSouls = "hud_cur_gold";
 
+    /// <summary>One kill feed entry (also used for objective kills, under an element named <c>BossDied</c>).</summary>
+    public const string KillFeed = "citadel_hud_data_feed_info";
+    /// <summary>Persona names: a player's name (for bots, the hero's), or an NPC's localized name.</summary>
+    public const string KillerName = "killer_name";
+    public const string VictimName = "victim_name";
+    /// <summary>The kill's soul bounty, shown on the killer's side (the victim side's copy is hidden and goes stale).</summary>
+    public const string FeedSouls = "gold";
+    public const string KillerContainer = "KillerContainer";
+    public const string AssistsContainer = "AssistsContainer";
+    /// <summary>Shown when the victim is an objective (guardian, walker, ...), so no localized names are needed.</summary>
+    public const string ObjectiveVictimClass = "bossLaneIcon";
+    /// <summary>
+    /// The game adds one hero image per assisting hero to <see cref="AssistsContainer"/>, with id
+    /// <c>PlayerAssist&lt;hero id&gt;</c> (seen: Haze, hero 13, as <c>PlayerAssist13</c>). Created at runtime, so not in
+    /// the layout files and not checked at start.
+    /// </summary>
+    public const string AssistPrefix = "PlayerAssist";
+
     /// <summary>Every (layout, dialog variable) the reader uses.</summary>
     public static readonly IReadOnlyList<(string Layout, string Variable)> Variables =
     [
@@ -48,6 +66,13 @@ public static class HudVocabulary
         (TopBarPlayer, Kills), (TopBarPlayer, Deaths), (TopBarPlayer, Assists), (TopBarPlayer, ObjectiveDamage), (TopBarPlayer, RespawnTime),
         (PlayerDetails, MaxHealth), (PlayerDetails, BulletResist), (PlayerDetails, SpiritResist),
         (SoulsContainer, UnspentSouls),
+        (KillFeed, KillerName), (KillFeed, VictimName), (KillFeed, FeedSouls),
+    ];
+
+    /// <summary>Every (layout, class) the reader uses.</summary>
+    public static readonly IReadOnlyList<(string Layout, string Class)> Classes =
+    [
+        (KillFeed, ObjectiveVictimClass),
     ];
 
     /// <summary>Every (layout, element id) the reader uses.</summary>
@@ -55,5 +80,6 @@ public static class HudVocabulary
     [
         (TopBar, FriendlyScore), (TopBar, EnemyScore),
         (TopBarPlayer, HealthFill), (TopBarPlayer, HealthContents),
+        (KillFeed, KillerContainer), (KillFeed, AssistsContainer),
     ];
 }

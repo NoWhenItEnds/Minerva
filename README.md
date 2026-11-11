@@ -29,7 +29,7 @@ Deadlock patches constantly, so nothing patch-specific is hand-maintained:
 | `Minerva.Mod/ClassProbes.cs` | Panorama can't list a panel's classes, only test one (`BHasClass`). For layouts whose panels carry meaning in classes (the minimap: hero/camp/boss, enemy, dead, camp up), the builder reads the layout's stylesheets from the game files and writes the class list into the script. | The class list is regenerated; only a renamed layout needs a code change (reported as a warning) |
 | `Minerva.Hud` | Follows `console.log`, reassembles the mod's messages, mirrors the HUD tree. | Unaffected |
 | `Minerva.GameState` | Static game data read from the game's packages: heroes and items (`GameData`), and the map's camps (position, type, first spawn, respawn, tether, the units each spawns and their soul rewards), lane paths and team objectives (`MapData`, from the map's entity lump plus `scripts/misc.vdata` and `scripts/npc_units.vdata`). Also demo parsing for offline analysis. | Data is re-read from game files automatically |
-| `Minerva.Match` | Interpretation: HUD tree + static data → match state. `Bindings/` matches every live panel to its node in its layout file (`LayoutCatalog` reads the game's layouts) by id, then type and position, so a label is known by its dialog variable (`{i:kills}` in `citadel_hud_top_bar_player`) instead of a panel path. `Hud/` reads named values that way (all names in `HudVocabulary`, checked against the installed layouts at start). `MatchReader` joins top bar rows with minimap icons by player slot order. `Minimap/` reads hero and objective icons by their classes (all Deadlock class names in `MinimapVocabulary`) and calibrates minimap ↔ world per match by fitting the walker/patron/barracks icons to the same objectives in `MapData`, which also tells which minimap team is which game team. `Camps/` infers camp state over time (camps have no HUD icons): spawn and respawn timers from `MapData`, clears from the local player's exact soul gains matching a nearby camp's unit rewards, and from other heroes' net worth jumps while at a camp away from lanes. Reports what it expected but didn't find. | Class renames: one line in `MinimapVocabulary`, flagged by a warning; transform and team mapping are refitted every match; camp timings and rewards are re-read from game files |
+| `Minerva.Match` | Interpretation: HUD tree + static data → match state. `Bindings/` matches every live panel to its node in its layout file (`LayoutCatalog` reads the game's layouts) by id, then type and position, so a label is known by its dialog variable (`{i:kills}` in `citadel_hud_top_bar_player`) instead of a panel path. `Hud/` reads named values that way (all names in `HudVocabulary`, checked against the installed layouts at start). `MatchReader` joins top bar rows with minimap icons by player slot order. `Minimap/` reads hero and objective icons by their classes (all Deadlock class names in `MinimapVocabulary`) and calibrates minimap ↔ world per match by fitting the walker/patron/barracks icons to the same objectives in `MapData`, which also tells which minimap team is which game team. `Camps/` infers camp state over time (camps have no HUD icons): spawn and respawn timers from `MapData`, clears from the local player's exact soul gains matching a nearby camp's unit rewards, and from other heroes' net worth jumps while at a camp away from lanes. `Hud/` also reads the kill feed; `MatchReader` ties its names to heroes. `Timeline/` (`MatchTimeline`) is the match over time, fed each read: kill, death, respawn, objective and camp events, each hero's K/D/A (from the feed) and last-seen position. The advisor reads from it. Reports what it expected but didn't find. | Class renames: one line in `MinimapVocabulary`, flagged by a warning; transform and team mapping are refitted every match; camp timings and rewards are re-read from game files |
 | `Minerva.Probe` | Development CLI. | — |
 
 The interpretation layer follows the same rule: panels are identified through the game's own layout files and
@@ -56,8 +56,9 @@ with `probe mod uninstall`.
 Then `probe map` prints the map's camps and objectives from the game files, `probe minimap` reads heroes and
 objectives from `out/hud_tree.json` and places them in world coordinates (with each hero's nearest camp), and
 `probe state` prints the whole match state: clock, souls, and each hero's row joined with their map position.
-`hud watch` also prints camp events as they're inferred (`[camp ] 3:31  park_club_camp (small): cleared by you`), and
-`probe camps --log <console.log>` replays a saved session's log through the camp tracker and prints every camp's state.
+`hud watch` also prints match events as they're inferred (`[event] 3:31  camp  park_club_camp: cleared by you`,
+`[event] 2:15  kill  Haze killed Billy (514 souls)`), and `probe timeline --log <console.log>` replays a saved session's
+log through the timeline and prints every event, each hero's K/D/A and last-seen position, and every camp's state.
 
 ## Tests
 
@@ -150,6 +151,16 @@ Tests that need the game skip themselves if Deadlock isn't installed (or set `DE
     Deaths can be counted from the respawn timer, and kills read from the kill feed (`citadel_hud_data_feed_info`:
     `{s:killer_name}`, `{s:victim_name}` and the soul bag amount). The feed shows persona names (in bot matches the
     hero's name), so mapping to heroes goes through each top bar row's `player_name`.
+  - Kill feed (10-minute match): the killer side's `{d:gold}` is the kill's bounty; solo kills by the local player
+    matched their soul gains exactly (+514, +599, +610, +688). The victim side's copy is hidden and keeps another
+    entry's value. Assists are hero images with ids `PlayerAssist<hero id>` (Haze, hero 13, as `PlayerAssist13`).
+    Objective kills come under an element named `BossDied`, with the `bossLaneIcon` element shown; NPC killers
+    (`GUARDIAN`) match no row. Entries move down as new ones arrive (their panels change), so kills are identified by
+    killer, victim and bounty, and counted once seen on two consecutive reads. Deaths from respawn timers and from the
+    feed agreed for every hero; the timeline gave the local player 13/1/3.
+  - Objective icons: the `active` class drops when an objective dies and the icon stays. But the minimap reuses
+    icon panels, so after a guardian dies a panel can show a different one: objectives are followed by kind, team and
+    lane. Five guardians went down in the match, two of them in the feed (the others presumably to troopers).
   - Reading the whole tree takes ~25 ms once warm (~190 ms for the first read); fine at one update per 1.5 s.
   - Some layouts are loaded more than once. The souls display is also inside the shop, where (closed, so hidden) the
     mod only refreshes it on complete walks, ~15 s apart. Readers take the copy on screen (`HudBindings.Primary`).

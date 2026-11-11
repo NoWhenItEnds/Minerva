@@ -22,6 +22,20 @@ public sealed record HeroRow(
     int? Souls, int? Level, int? Kills, int? Deaths, int? Assists, int? ObjectiveDamage,
     double? RespawnSeconds, bool Dead, double? HealthFraction, int? MaxHealth, int? BulletResist, int? SpiritResist);
 
+/// <summary>One kill feed entry on screen.</summary>
+/// <param name="Killer">Persona name of the killer (a player's name; a bot's or NPC's localized name).</param>
+/// <param name="Souls">The kill's soul bounty.</param>
+/// <param name="VictimIsObjective">The victim is an objective (guardian, walker, ...), not a hero.</param>
+/// <param name="AssistHeroIds">Hero ids of the assisting heroes.</param>
+public sealed record FeedEntry(string Key, string? Killer, string? Victim, int? Souls, bool VictimIsObjective, IReadOnlyList<int> AssistHeroIds)
+{
+    /// <summary>
+    /// Identifies the kill across updates: entries move as new ones arrive, so their panels don't. The same killer can
+    /// kill the same victim again, but not for the same bounty within seconds.
+    /// </summary>
+    public string Signature => $"{Killer}|{Victim}|{Souls}|{VictimIsObjective}";
+}
+
 /// <summary>Match-level HUD values.</summary>
 /// <param name="Clock">Match clock; negative before the match starts.</param>
 /// <param name="UnspentSouls">The local player's unspent souls (exact).</param>
@@ -32,7 +46,11 @@ public sealed record HeroRow(
 public sealed record HudState(
     TimeSpan? Clock, int? UnspentSouls,
     int? FriendlyKills, int? EnemyKills, int? FriendlyNetworth, int? EnemyNetworth, string? MidBossTimer,
-    IReadOnlyList<HeroRow> Heroes, IReadOnlyList<string> Warnings);
+    IReadOnlyList<HeroRow> Heroes, IReadOnlyList<string> Warnings)
+{
+    /// <summary>Kill feed entries on screen.</summary>
+    public IReadOnlyList<FeedEntry> Feed { get; init; } = [];
+}
 
 /// <summary>Reads named values from the HUD through the game's own layout bindings.</summary>
 public sealed partial class HudReader
@@ -57,7 +75,7 @@ public sealed partial class HudReader
     {
         var warnings = new List<string>();
         static IEnumerable<LayoutNode> All(LayoutNode n) => n.Children.SelectMany(All).Prepend(n);
-        foreach (var layout in V.Variables.Select(v => v.Layout).Concat(V.Ids.Select(i => i.Layout)).Distinct())
+        foreach (var layout in V.Variables.Select(v => v.Layout).Concat(V.Ids.Select(i => i.Layout)).Concat(V.Classes.Select(c => c.Layout)).Distinct())
         {
             if (catalog.Get(layout) is not { } file)
             {
@@ -69,6 +87,8 @@ public sealed partial class HudReader
                 if (!nodes.Any(n => n.Variables.Contains(variable))) warnings.Add($"'{layout}' has no {{:{variable}}} label any more.");
             foreach (var (_, id) in V.Ids.Where(i => i.Layout == layout))
                 if (!nodes.Any(n => n.Id == id)) warnings.Add($"'{layout}' has no element '{id}' any more.");
+            foreach (var (_, cls) in V.Classes.Where(c => c.Layout == layout))
+                if (!nodes.Any(n => n.Classes.Contains(cls))) warnings.Add($"'{layout}' has no element with class '{cls}' any more.");
         }
         return warnings;
     }
@@ -119,7 +139,32 @@ public sealed partial class HudReader
             Integer(top?.Field(V.FriendlyKills)), Integer(top?.Field(V.EnemyKills)),
             Souls(top?.Field(V.TeamNetworth, V.FriendlyScore)), Souls(top?.Field(V.TeamNetworth, V.EnemyScore)),
             Clean(top?.Field(V.MidBossTimer)),
-            heroes, warnings);
+            heroes, warnings) { Feed = ReadFeed(hud) };
+    }
+
+    private static List<FeedEntry> ReadFeed(HudBindings hud)
+    {
+        var entries = new List<FeedEntry>();
+        foreach (var entry in hud.Instances(V.KillFeed))
+        {
+            if (!entry.Shown) continue;
+            var killer = Clean(entry.Field(V.KillerName));
+            var victim = Clean(entry.Field(V.VictimName));
+            if (string.IsNullOrEmpty(killer) && string.IsNullOrEmpty(victim)) continue;
+            var souls = entry.Bound(V.FeedSouls, V.KillerContainer) is { } s && entry.IsShown(s) ? Souls(s.Value(V.FeedSouls)) : null;
+            var objective = entry.Panels.Any(p => p.Node.Classes.Contains(V.ObjectiveVictimClass) && entry.IsShown(p));
+            var assists = new List<int>();
+            if (entry.ById(V.AssistsContainer) is { } container)
+                foreach (var child in hud.Children(container.Panel.Key))
+                {
+                    var name = child[(child.LastIndexOf('/') + 1)..];
+                    if (name.StartsWith(V.AssistPrefix, StringComparison.Ordinal) && hud.IsShown(child) &&
+                        int.TryParse(name.AsSpan(V.AssistPrefix.Length), NumberStyles.None, CultureInfo.InvariantCulture, out var id))
+                        assists.Add(id);
+                }
+            entries.Add(new FeedEntry(entry.Key, killer, victim, souls, objective, assists));
+        }
+        return entries;
     }
 
     /// <summary>The game team of the nearest enclosing layout element with a <c>team</c> attribute.</summary>

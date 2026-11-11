@@ -117,6 +117,9 @@ public sealed class HudBindings
         return all.FirstOrDefault(i => i.Shown) ?? all.FirstOrDefault();
     }
 
+    /// <summary>Keys of a panel's children (in no particular order).</summary>
+    public IReadOnlyList<string> Children(string key) => _children.GetValueOrDefault(key) ?? (IReadOnlyList<string>)[];
+
     /// <summary>The panel and all its ancestors are visible.</summary>
     public bool IsShown(string key)
     {
